@@ -26,7 +26,27 @@
  
 ;; Add productions here
 
-
+(p brake
+   =goal>
+    ISA tooFast
+    one-ans busy
+    one1 =num1
+    one2 =num2
+  =retrieval>
+    ISA addition-fact
+    addend1 =num1
+    addend2 =num2
+    sum =sum
+==>
+  =goal>
+    one-ans =sum
+    carry busy
+  +retrieval>
+    ISA addition-fact
+    addend1 10
+    sum =sum
+)
+   
 (p brake
   =goal>
     ISA brakeEasy or brakeHard ; peu importe le chunk on veut freiners, est-cepossible de mettre 'OR' ?
