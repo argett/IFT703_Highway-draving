@@ -15,12 +15,10 @@
 
 (add-dm
  (goal isa accident positionX nil positionY 0 relative_speed nil)
- (brakeEasy isa my_car weight nil positionX nil positionY nil speed -2)
+
+ (brakeSoft isa my_car weight nil positionX nil positionY nil speed -2)
  (brakeHard isa my_car weight nil positionX nil positionY nil speed -5)
 
- (turnR isa turn X_relative_position 1)
- (turnL isa turn X_relative_position -1)
- ; ou
  (turnR isa my_car positionX 1 positionY nil relative_speed nil)
  (turnL isa my_car positionX -1 positionY nil relative_speed nil)
  )
@@ -47,4 +45,26 @@
   +retrieval>
     ISA addition-fact
     addend1 10
-    sum =sum)
+    sum =sum
+)
+
+(p turn
+  =goal>
+    ISA ; peu importe le chunk on veut freiners, est-cepossible de mettre 'OR' ?
+    one-ans busy
+    one1 =num1
+    one2 =num2
+  =retrieval>
+    ISA addition-fact
+    addend1 =num1
+    addend2 =num2
+    sum =sum
+==>
+  =goal>
+    one-ans =sum
+    carry busy
+  +retrieval>
+    ISA addition-fact
+    addend1 10
+    sum =sum
+)
