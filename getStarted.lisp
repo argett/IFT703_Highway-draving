@@ -23,9 +23,9 @@
  (voiture_s isa speed id 0 vitesse s)
 
  
- (camion isa car id 0 weight w)
- (voiture_p isa position id 0 positionX x positionY y)
- (voiture_s isa speed id 0 vitesse s)
+ (camion isa car id 1 weight nil)
+ (camion_p isa position id 1 positionX x positionY y)
+ (camion_s isa speed id 1 vitesse s)
 
  (goal isa accident positionX nil positionY 0 relative_speed nil)
 
@@ -55,7 +55,7 @@
 
 
 
-
+; les prochaines procédures sont juste des test quelconques
 
 (p brake
    =goal>
