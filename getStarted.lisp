@@ -6,8 +6,7 @@
 
 ;; Add Chunk-types here
 
-(chunk-type my_car id weight)
-
+(chunk-type car id weight)
 (chunk-type position id positionX positionY)
 (chunk-type speed id vitesse)
 
@@ -19,8 +18,13 @@
 ;; Add Chunks here
 
 (add-dm
- (voiture isa my_car id 0 weight w)
- (voiture_p isa position id 0 positionX 2 positionY 0)
+ (voiture isa car id 0 weight w)
+ (voiture_p isa position id 0 positionX x positionY y)
+ (voiture_s isa speed id 0 vitesse s)
+
+ 
+ (camion isa car id 0 weight w)
+ (voiture_p isa position id 0 positionX x positionY y)
  (voiture_s isa speed id 0 vitesse s)
 
  (goal isa accident positionX nil positionY 0 relative_speed nil)
