@@ -18,11 +18,12 @@
 ;; Add Chunks here
 
 (add-dm
+; exemple de notre voiture
  (voiture isa car id 0 weight w)
  (voiture_p isa position id 0 positionX x positionY y)
  (voiture_s isa speed id 0 vitesse s)
 
- 
+; exemple d'une voiture accidenté pour le scénario de base
  (camion isa car id 1 weight nil)
  (camion_p isa position id 1 positionX x positionY y)
  (camion_s isa speed id 1 vitesse s)
@@ -39,6 +40,8 @@
  
 ;; Add productions here
 
+; Turns
+
 (p turnL
   =goal>
     ISA turn
@@ -53,48 +56,73 @@
     positionX     =x_pos_car + deviation
 )
 
-
-
-; les prochaines procédures sont juste des test quelconques
-
-(p brake
-   =goal>
-    ISA tooFast
-    one-ans busy
-    one1 =num1
-    one2 =num2
-  =retrieval>
-    ISA addition-fact
-    addend1 =num1
-    addend2 =num2
-    sum =sum
+(p turnR
+  =goal>
+    ISA turn
+    X_relative_position 1
+    X_relative_position =deviation
+   =retrieval>
+      ISA         my_car
+      positionX   =x_pos_car
 ==>
   =goal>
-    one-ans =sum
-    carry busy
-  +retrieval>
-    ISA addition-fact
-    addend1 10
-    sum =sum
+    ISA my_car
+    positionX     =x_pos_car + deviation
 )
-   
-(p brake
-  =goal>
-    ISA brakeEasy or brakeHard ; peu importe le chunk on veut freiners, est-cepossible de mettre 'OR' ?
-    one-ans busy
-    one1 =num1
-    one2 =num2
+
+; Brakes
+
+(p brakeSoft
+   =goal>
+    ISA       brake
+    power     2
+    power     =puissance_de_freinage
   =retrieval>
-    ISA addition-fact
-    addend1 =num1
-    addend2 =num2
-    sum =sum
+    ISA       speed
+    id        0
+    vitesse   =s
 ==>
   =goal>
-    one-ans =sum
-    carry busy
-  +retrieval>
-    ISA addition-fact
-    addend1 10
-    sum =sum
+   ; ???
+  =retrieval>
+    ISA speed
+    id        0
+    vitesse   =s-puissance_de_freinage
+)
+
+(p brakeHard
+   =goal>
+    ISA       brake
+    power     5
+    power     =puissance_de_freinage
+  =retrieval>
+    ISA       speed
+    id        0
+    vitesse   =s
+==>
+  =goal>
+   ; ???
+  =retrieval>
+    ISA speed
+    id        0
+    vitesse   =s-puissance_de_freinage
+)
+
+; Take info
+
+(p lookLeft
+   =goal>
+    ISA       a
+    a         a
+  =retrieval>
+    ISA       a
+    a         a
+    a         a
+==>
+  =goal>
+   ; ???
+  =retrieval>
+    ISA speed
+    a         a
+    a         a
 )
