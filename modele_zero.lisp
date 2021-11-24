@@ -19,7 +19,7 @@
 
    (setf moyenne 0)
    (dotimes (i n-times)
-      (setf compteur 1)
+      (setf tour 1)
       (setf not-win t)
       (setf res nil)
       (setf state nil)
@@ -37,19 +37,58 @@
          (setf (slot-value (cadr *voitures*) 'positionY) 10)
 
          (let ((choix-model (show-model-highway *voitures* res state))); Montre notre voiture et l'accident au modèle et enregistre la key pressée par le model
-            
+            ;; Queelles sont les strings a return pour choix-model ? freiner fort, freiner faible, tourner droite ou tourner gauche ?
+            ;; 1 = frein faible, 2 = frein fort, 3 = turnR, 4 = turnL
             (when (string-equal "1" choix-model) (progn
-               (setf compteur (+ compteur 1)) ;; incrémente compteur
-               (setf (slot-value (caddr *valises*) 'couche) 2)
-               (setf state "weight-problem"))) ; Met la troisième valise en couche 2
-                ;; mettre state à weight-problem si key 1
+               (setf tour (+ tour 1)) ;; incrémente le nombre de tour
+               (setf (slot-value (car *voitures*) 'vitesse) -1 / "moyen ? faible ?") ;; int ou string ?
+               (setf state "Un state à choisir"))) ; TODO
+
             (when (string-equal "2" choix-model) (progn
-               (setf compteur (+ compteur 1))
-               (setf (slot-value (cadr *valises*) 'couche) 2)
-               (setf state "weight-problem-2"))) ; Met la deuxième valise en couche 2
-            (setf res "win") ;; De base on win
+               (setf tour (+ tour 1)) ;; incrémente le nombre de tour
+               (setf (slot-value (car *voitures*) 'vitesse) -1 / "moyen ? faible ?") ;; int ou string ?
+               (setf state "Un state à choisir"))) ; TODO
+
+            (when (string-equal "3" choix-model) (progn
+               (setf tour (+ tour 1)) ;; incrémente le nombre de tour
+               (setf (slot-value (car *voitures*) 'positionX) +=1 ) ;; le plus +1 foctionne comment en lisp ?
+               (setf state "Un state à choisir"))) ; TODO
+
+            (when (string-equal "4" choix-model) (progn
+               (setf tour (+ tour 1)) ;; incrémente le nombre de tour
+               (setf (slot-value (car *voitures*) 'positionX) -=1 )  ;; le plus +1 foctionne comment en lisp ?
+               (setf state "Un state à choisir"))) ; TODO
+
+               
+            (setf res "on verra") ;; changer les valeurs dans les if 
             (setf poids-tot-couche-1 0)
             (setf poids-tot-couche-2 0)
+
+            (if (= (slot-value (car *voitures*) 'positionX)  (slot-value (cadr *voitures*) 'positionX))  
+               (if (= (slot-value (car *voitures*) 'positionY)  (slot-value (cadr *voitures*) 'positionY))  
+                     (setf res "crash") ;; Les deux voitures sont sur la même case
+
+                     ;; pourquoi ce unless 0 ? eut être à enlever
+                     (progn (setf not-win nil)
+                      (unless (string-equal choix-model "0")(progn 
+                        (setf state "final")
+                        (show-model-result res state))))
+               )
+            )
+            ;; TODO
+            ;; faire un else if la voiture a dépasse l'accident on gagne (et donc modifier les valeurs)
+            (if (= (slot-value (car *voitures*) 'positionX)  (slot-value (cadr *voitures*) 'positionX))  
+               (if (= (slot-value (car *voitures*) 'positionY)  (slot-value (cadr *voitures*) 'positionY))  
+                     (setf res "crash") ;; Les deux voitures sont sur la même case
+
+                     ;; pourquoi ce unless 0 ? eut être à enlever
+                     (progn (setf not-win nil)
+                      (unless (string-equal choix-model "0")(progn 
+                        (setf state "final")
+                        (show-model-result res state))))
+               )
+            )
+
             (loop for valise in *valises* ; boucle sur les valises choisi par le modèle
                do (if (= (slot-value valise 'couche) 1)
                      ;; Si la valise est couche 1
@@ -63,6 +102,7 @@
                       (unless (string-equal choix-model "0")(progn 
                         (setf state "final")
                         (show-model-result res state))))))
+
             (when draw-valises
             (print-valise (car *valises*))
             (print-valise (cadr *valises*))
@@ -109,15 +149,15 @@
    (defparameter *accident* (make-instance 'voiture))
    ;;(defparameter *voiture* (make-instance 'voiture)) ;; pour plus tard
 
-   (setf (slot-value model 'poids) (1) ; poids pas aléatoire pour l'instant 
-   (setf (slot-value model 'vitesse) ("rapide")
-   (setf (slot-value model 'positionX) (0) ; voie du milieu
-   (setf (slot-value model 'positionY) (0) ; tout en bas de la route
+   (setf (slot-value model 'poids) (1)) ; poids pas aléatoire pour l'instant 
+   (setf (slot-value model 'vitesse) ("rapide"))
+   (setf (slot-value model 'positionX) (0)) ; voie du milieu
+   (setf (slot-value model 'positionY) (0)) ; tout en bas de la route
    
-   (setf (slot-value accident 'poids) (1) ; poids pas aléatoire pour l'instant 
-   (setf (slot-value accident 'vitesse) ("lent")
-   (setf (slot-value accident 'positionX) (0) ; voie du milieu
-   (setf (slot-value accident 'positionY) (10) ; tout en haut de la route
+   (setf (slot-value accident 'poids) (1)) ; poids pas aléatoire pour l'instant 
+   (setf (slot-value accident 'vitesse) ("lent"))
+   (setf (slot-value accident 'positionX) (0)) ; voie du milieu
+   (setf (slot-value accident 'positionY) (10)) ; tout en haut de la route
 
    
    (defvar voitures-list(list *model* *accident*)) ; ajout des voitures dans une liste
@@ -135,7 +175,8 @@
    ;;            (1 (progn (setf (slot-value voiture 'positionX)-1)))
    ;;            (3 (progn (setf (slot-value voiture 'positionX) 1))))
 
-   voitures-list); return la liste avec [0] notre model et [1] l'accident
+   voitures-list
+); return la liste avec [0] notre model et [1] l'accident
    
 
 (defun show-model-highway(voitures &optional res state)
@@ -153,13 +194,18 @@
       (mod-focus-fct `(id ,1  positionX ,(slot-value (cadr voitures) 'positionX) positionY ,(slot-value (car voitures) 'positionY)))  ; chunk type position
       (mod-focus-fct `(id ,1  vitesse ,(slot-value (cadr voitures) 'vitesse)))  ; chunk type vitesse
 
+      ; TODO
       (goal-focus-fct (car (define-chunks-fct ; crée un nouveau chunk et le met dans le goal
-                             `((isa arrange-state c1 ,(slot-value (car valises) 'categorie)  c2 ,(slot-value (cadr valises) 'categorie) c3 ,(slot-value (caddr valises) 'categorie)
-                                 p1 ,(slot-value (car valises) 'poids)  p2 ,(slot-value (cadr valises) 'poids) p3 ,(slot-value (caddr valises) 'poids)
-                                 result , res
-                                 state , state
-                                 first-c , nil
-                                 second-c, nil))))))
+                             `((isa /* mettre nom de la procédure à goal */ 
+                                 var1, value1
+                                 var2, value2
+                                 ...
+                                 )))))
+   )
+   (run-full-time 10)
+   *model-action*
+)
+
 
 
 
@@ -267,6 +313,9 @@
 ;;   =retrieval>
 ;;      ISA                   rem-order
 ;;      first                 =x_pos_car 
+;;    +manual>
+;;      cmd press-key
+;;      key "4"
 ;;)
 ;;
 ;;(p turnedLeft
@@ -290,6 +339,9 @@
 ;;      id                  =0
 ;;      positionX           =finalPosX
 ;;      positionY           =posY
+;;    +manual>
+;;      cmd press-key
+;;      key "4"
 ;;)
 ;;
 ;;(p turnR
@@ -307,6 +359,9 @@
 ;;   =retrieval>
 ;;      ISA                   rem-order
 ;;      first                 =x_pos_car 
+;;    +manual>
+;;      cmd press-key
+;;      key "3"
 ;;)
 ;;
 ;;(p turnedRight
@@ -330,6 +385,9 @@
 ;;      id                  =0
 ;;      positionX           =finalPosX
 ;;      positionY           =posY
+;;    +manual>
+;;      cmd press-key
+;;      key "3"
 ;;)
 ;;
 ;;;;;;;;;;;;;; Brakes ;;;;;;;;;;;;
@@ -346,12 +404,15 @@
 ;;    id                    0
 ;;    vitesse               =s
 ;;==>
-;;  =goal>
-;;   ;; ???
-;;  =retrieval>
-;;    ISA speed
-;;    id                     0
-;;    vitesse                =s-puissance_de_freinage
+;;    =goal>
+;;       ;; ???
+;;     =retrieval>
+;;       ISA speed
+;;       id                     0
+;;       vitesse                =s-puissance_de_freinage
+;;    +manual>
+;;       cmd press-key
+;;       key "1"
 ;;)
 ;;
 ;;;; A changer 
@@ -366,12 +427,15 @@
 ;;    id        0
 ;;    vitesse   =s
 ;;==>
-;;  =goal>
-;;   ; ???
-;;  =retrieval>
-;;    ISA speed
-;;    id        0
-;;    vitesse   =s-puissance_de_freinage
+;;    =goal>
+;;       ; ???
+;;    =retrieval>
+;;       ISA speed
+;;       id        0
+;;       vitesse   =s-puissance_de_freinage
+;;    +manual>
+;;       cmd press-key
+;;       key "2"
 ;;)
 ;;
 ;;;;;;;;;;;;;; Take info ;;;;;;;;;;;;
