@@ -11,20 +11,23 @@
 
 (defun run-blocks (blocks block-size)     
    (dotimes (i blocks)
-      (setf retour (place_elements block-size)))
-      retour)
+      (setf retour (place_elements block-size))
+   )
+   retour
+)
 
 ;; Fonction pour placer les voitures sur les voies
-(defun place_elements(n-times &optional (draw-valises nil))
+(defun place_elements (n-times &optional) ; TODO : (draw-highway nil))
 
-   (setf moyenne 0)
+   (setf nbWin 0)
    (dotimes (i n-times)
       (setf tour 1)
-      (setf not-win t)
+      (setf not-win t) ; t = true, nil = false
       (setf res nil)
       (setf state nil)
 
-      (setf *voitures* (create-voiture)); Creation des voitures
+      (setf *voitures* (create-voiture)); Creation de notre voiture et de la voiture accident
+      ;; TODO : creation d'autres usagers = (setf *usagers* (create-usagers)); Creation des voitures des autres usagers si complexification
 
 
       (while not-win ; appeler le modèle tant qu'il n'a pas win
@@ -36,111 +39,98 @@
          (setf (slot-value (cadr *voitures*) 'positionX) 0)
          (setf (slot-value (cadr *voitures*) 'positionY) 10)
 
-         (let ((choix-model (show-model-highway *voitures* res state))); Montre notre voiture et l'accident au modèle et enregistre la key pressée par le model
-            ;; Queelles sont les strings a return pour choix-model ? freiner fort, freiner faible, tourner droite ou tourner gauche ?
+         (let (choix-model (show-model-highway *voitures* res state)); Montre notre voiture et l'accident au modèle et enregistre la key pressée par le model
+            ;; TODO
+            ;; Quelles sont les strings a return pour choix-model ? freiner fort, freiner faible, tourner droite ou tourner gauche ?
+
             ;; 1 = frein faible, 2 = frein fort, 3 = turnR, 4 = turnL
             (when (string-equal "1" choix-model) (progn
                (setf tour (+ tour 1)) ;; incrémente le nombre de tour
                (setf (slot-value (car *voitures*) 'vitesse) -1 / "moyen ? faible ?") ;; int ou string ?
-               (setf state "Un state à choisir"))) ; TODO
+               (setf state "Un state à choisir"))
+            ) ; TODO
 
             (when (string-equal "2" choix-model) (progn
                (setf tour (+ tour 1)) ;; incrémente le nombre de tour
                (setf (slot-value (car *voitures*) 'vitesse) -1 / "moyen ? faible ?") ;; int ou string ?
-               (setf state "Un state à choisir"))) ; TODO
+               (setf state "Un state à choisir"))
+            ) ; TODO
 
             (when (string-equal "3" choix-model) (progn
                (setf tour (+ tour 1)) ;; incrémente le nombre de tour
                (setf (slot-value (car *voitures*) 'positionX) +=1 ) ;; le plus +1 foctionne comment en lisp ?
-               (setf state "Un state à choisir"))) ; TODO
+               (setf state "Un state à choisir"))
+            ) ; TODO
 
             (when (string-equal "4" choix-model) (progn
                (setf tour (+ tour 1)) ;; incrémente le nombre de tour
                (setf (slot-value (car *voitures*) 'positionX) -=1 )  ;; le plus +1 foctionne comment en lisp ?
-               (setf state "Un state à choisir"))) ; TODO
+               (setf state "Un state à choisir"))
+            ) ; TODO
 
                
             (setf res "on verra") ;; changer les valeurs dans les if 
             (setf poids-tot-couche-1 0)
             (setf poids-tot-couche-2 0)
 
+            ;; Les deux voitures sont sur la même case
             (if (= (slot-value (car *voitures*) 'positionX)  (slot-value (cadr *voitures*) 'positionX))  
                (if (= (slot-value (car *voitures*) 'positionY)  (slot-value (cadr *voitures*) 'positionY))  
-                     (setf res "crash") ;; Les deux voitures sont sur la même case
+                  (setf res "crash") 
 
-                     ;; pourquoi ce unless 0 ? eut être à enlever
-                     (progn (setf not-win nil)
-                      (unless (string-equal choix-model "0")(progn 
+                  ;; TODO : code a priori qu'on doit faire
+                  ;(setf state " - un state a definir - ")
+                  ;(setf not-win nil)
+                  ;(show-model-result res state)
+
+                  ;; pourquoi ce unless 0 ? eut être à enlever
+                  (progn (setf not-win nil)
+                     (unless (string-equal choix-model "0")(progn 
                         (setf state "final")
-                        (show-model-result res state))))
-               )
-            )
-            ;; TODO
-            ;; faire un else if la voiture a dépasse l'accident on gagne (et donc modifier les valeurs)
-            (if (= (slot-value (car *voitures*) 'positionX)  (slot-value (cadr *voitures*) 'positionX))  
-               (if (= (slot-value (car *voitures*) 'positionY)  (slot-value (cadr *voitures*) 'positionY))  
-                     (setf res "crash") ;; Les deux voitures sont sur la même case
-
-                     ;; pourquoi ce unless 0 ? eut être à enlever
-                     (progn (setf not-win nil)
-                      (unless (string-equal choix-model "0")(progn 
-                        (setf state "final")
-                        (show-model-result res state))))
-               )
-            )
-
-            (loop for valise in *valises* ; boucle sur les valises choisi par le modèle
-               do (if (= (slot-value valise 'couche) 1)
-                     ;; Si la valise est couche 1
-                     (setf poids-tot-couche-1 (+ poids-tot-couche-1 (slot-value valise 'poids))) ; Adition du poids de la valise
-                     ;; Si la valise est couche 2
-                     (setf poids-tot-couche-2 (+ poids-tot-couche-2 (slot-value valise 'poids))))) ; Adition du poids de la valise
-            ;(setf choix-model "0")
-            (if (> poids-tot-couche-2 poids-tot-couche-1)
-               (setf res "lose") ; Si les valises en couche 2 sont plus lourdes -> lose
-               (progn (setf not-win nil)
-                      (unless (string-equal choix-model "0")(progn 
-                        (setf state "final")
-                        (show-model-result res state))))))
-
-            (when draw-valises
-            (print-valise (car *valises*))
-            (print-valise (cadr *valises*))
-            (print-valise (caddr *valises*))
-               (if (and (= (slot-value (car *valises*) 'couche) 1) (= (slot-value (cadr *valises*) 'couche) 1) (= (slot-value (caddr *valises*) 'couche) 1))
-                  (progn
-                     (setf nb 0)
-                     (setf grandevalise (car *valises*))
-                     (loop for valise in *valises*
-                        do (if (= (slot-value valise 'categorie) 1)
-                           (setf nb (+ nb 1))
-                           (setf grandevalise valise)))
-                     (if (>= nb 2)
-                        (progn 
-                           (draw2little)
-                           (draw-valise grandevalise)
-                        )
-                        (progn
-                           (format t "Niveau 1:~%")
-                           (loop for valise in *valises*
-                              do (when (= (slot-value valise 'couche) 1)
-                                 (progn (draw-valise valise) (format t "~%"))))
-                           (format t "~%Niveau 2:~%")
-                           (loop for valise in *valises*
-                              do (when (= (slot-value valise 'couche) 2)
-                                 (draw-valise valise)))
-                        ))
+                        (show-model-result res state))
+                     )
                   )
-                  (progn 
-                     (format t "Niveau 1:~%")
-                     (loop for valise in *valises*
-                        do (when (= (slot-value valise 'couche) 1)
-                           (progn (draw-valise valise) (format t "~%"))))
-                     (format t "~%Niveau 2:~%")
-                     (loop for valise in *valises*
-                        do (when (= (slot-value valise 'couche) 2)
-                           (draw-valise valise)))))))
+               )
+            )
 
+            ;; La voiture a dépasse l'accident, on gagne
+            (if (> (slot-value (car *voitures*) 'positionX)  (slot-value (cadr *voitures*) 'positionX))    
+               (setf res "win") ;; Les deux voitures sont sur la même case
+
+               ;; TODO : code a priori qu'on doit faire
+               ;(setf state " - un state a definir - ")
+               ;(setf not-win nil)
+               ;(show-model-result res state)
+
+               ;; pourquoi ce unless 0 ? eut être à enlever
+               (progn (setf not-win nil)
+                  (unless (string-equal choix-model "0")(progn 
+                     (setf state "final")
+                     (show-model-result res state))
+                  )
+               )
+            )
+
+            ;;(loop for usager in *usagers* ; on traite toutes les voitures autour
+            ;;   ; TODO : faire des if crash sur chaque voiture
+            ;;)
+    
+
+            (when draw-highway
+               ;;(print-model (car *voitures*))
+               ;;(print-accident (cadr *voitures*))
+               ;;(print-route)
+            )
+
+            (if (= res "win")
+               (setf nbWin (+ nbWin 1))
+            )
+         )
+      )
+   )
+   (format t "On a win ~d fois sur ~d essais" nbWin n-times)
+)
+)
 
 
 (defun create-voitures()
@@ -158,10 +148,16 @@
    (setf (slot-value accident 'vitesse) ("lent"))
    (setf (slot-value accident 'positionX) (0)) ; voie du milieu
    (setf (slot-value accident 'positionY) (10)) ; tout en haut de la route
-
    
    (defvar voitures-list(list *model* *accident*)) ; ajout des voitures dans une liste
-   ;;(defvar voitures-autour-list(list *voiture* *voiture*)) ; si jamais pour plus tard
+
+   voitures-list
+); return la liste avec [0] notre model et [1] l'accident
+
+(defun create-usagers() ;; TODO :pour plus tard
+   (defparameter *usager1* (make-instance 'voiture))
+   (defparameter *usager2* (make-instance 'voiture))
+   (defparameter *usager3* (make-instance 'voiture))
 
    ; boucle qui génère les voitures autours (innutile au début)
    ;;(loop for voiture in voitures-autour-list 
@@ -174,10 +170,9 @@
    ;;         (case (slot-value voiture 'positionX)
    ;;            (1 (progn (setf (slot-value voiture 'positionX)-1)))
    ;;            (3 (progn (setf (slot-value voiture 'positionX) 1))))
-
-   voitures-list
-); return la liste avec [0] notre model et [1] l'accident
-   
+   (defvar voitures-autour-list(list *usager1* *usager2*  *usager3*))
+   voitures-autour-list
+)
 
 (defun show-model-highway(voitures &optional res state)
    (if (buffer-read 'goal) ;; s'il y a un chunk dans le buffers goal
