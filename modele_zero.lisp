@@ -9,6 +9,19 @@
    )
 )
 
+(defun show-learning (n &optional (graph t))
+   ;; pour le graph (let ((points))
+   (dotimes (i n);; ici pour des blocs de 100
+      (push (run-blocks 1 100) points)
+   ) 
+
+      ;;(setf points (rev points))
+      ;;(when graph
+      ;;   (draw-graph points)
+      ;;)
+   ;;)
+)
+
 (defun run-blocks (blocks block-size)     
    (dotimes (i blocks)
       (setf retour (place_elements block-size))
@@ -18,7 +31,7 @@
 
 ;; Fonction pour placer les voitures sur les voies
 (defun place_elements (n-times &optional) ; TODO : (draw-highway nil))
-
+   (format t "ca marcheee")
    (setf nbWin 0)
    (dotimes (i n-times)
       (setf tour 1)
@@ -130,7 +143,6 @@
    )
    (format t "On a win ~d fois sur ~d essais" nbWin n-times)
 )
-)
 
 
 (defun create-voitures()
@@ -149,7 +161,7 @@
    (setf (slot-value accident 'positionX) (0)) ; voie du milieu
    (setf (slot-value accident 'positionY) (10)) ; tout en haut de la route
    
-   (defvar voitures-list(list *model* *accident*)) ; ajout des voitures dans une liste
+   (defvar voitures-list (list *model* *accident*)) ; ajout des voitures dans une liste
 
    voitures-list
 ); return la liste avec [0] notre model et [1] l'accident
@@ -170,47 +182,56 @@
    ;;         (case (slot-value voiture 'positionX)
    ;;            (1 (progn (setf (slot-value voiture 'positionX)-1)))
    ;;            (3 (progn (setf (slot-value voiture 'positionX) 1))))
-   (defvar voitures-autour-list(list *usager1* *usager2*  *usager3*))
+   (defvar voitures-autour-list (list *usager1* *usager2*  *usager3*))
    voitures-autour-list
 )
 
-(defun show-model-highway(voitures &optional res state)
-   (if (buffer-read 'goal) ;; s'il y a un chunk dans le buffers goal
-
-      ; Pas compris comment on choisi dans quel chunk mettre ça
-
-      ;; notre modele (le 'car' veut dire chopper la 1er element de la liste et pas la voiture en traduction anglaise !)
-      (mod-focus-fct `(id ,0  weight ,(slot-value (car voitures) 'poids) state ,"non accidente"))  ; chunk type car
-      (mod-focus-fct `(id ,0  positionX ,(slot-value (car voitures) 'positionX) positionY ,(slot-value (car voitures) 'positionY)))  ; chunk type position
-      (mod-focus-fct `(id ,0  vitesse ,(slot-value (car voitures) 'vitesse)))  ; chunk type vitesse
-
-      ;; la voiture accident (le 'cadr' veut dire chopper le 2nd element de la liste)
-      (mod-focus-fct `(id ,1  weight ,(slot-value (cadr voitures) 'poids) state ,"non accidente"))  ; chunk type car
-      (mod-focus-fct `(id ,1  positionX ,(slot-value (cadr voitures) 'positionX) positionY ,(slot-value (car voitures) 'positionY)))  ; chunk type position
-      (mod-focus-fct `(id ,1  vitesse ,(slot-value (cadr voitures) 'vitesse)))  ; chunk type vitesse
-
-      ; TODO
-      (goal-focus-fct (car (define-chunks-fct ; crée un nouveau chunk et le met dans le goal
-                             `((isa /* mettre nom de la procédure à goal */ 
-                                 var1, value1
-                                 var2, value2
-                                 ...
-                                 )))))
-   )
-   (run-full-time 10)
-   *model-action*
+(defun show-model-highway (voitures &optional (res state))
+   ;;(if (buffer-read 'goal) ;; s'il y a un chunk dans le buffers goal
+   ;;
+   ;;   ; Pas compris comment on choisi dans quel chunk mettre ça
+   ;;
+   ;;   ;; notre modele (le 'car' veut dire chopper la 1er element de la liste et pas la voiture en traduction anglaise !)
+   ;;   (mod-focus-fct `(id ,0  weight ,(slot-value (car voitures) 'poids) state ,"non accidente"))  ; chunk type car
+   ;;   (mod-focus-fct `(id ,0  positionX ,(slot-value (car voitures) 'positionX) positionY ,(slot-value (car voitures) 'positionY)))  ; chunk type position
+   ;;   (mod-focus-fct `(id ,0  vitesse ,(slot-value (car voitures) 'vitesse)))  ; chunk type vitesse
+   ;;
+   ;;   ;; la voiture accident (le 'cadr' veut dire chopper le 2nd element de la liste)
+   ;;   (mod-focus-fct `(id ,1  weight ,(slot-value (cadr voitures) 'poids) state ,"non accidente"))  ; chunk type car
+   ;;   (mod-focus-fct `(id ,1  positionX ,(slot-value (cadr voitures) 'positionX) positionY ,(slot-value (car voitures) 'positionY)))  ; chunk type position
+   ;;   (mod-focus-fct `(id ,1  vitesse ,(slot-value (cadr voitures) 'vitesse)))  ; chunk type vitesse
+   ;;
+   ;;   ; TODO
+   ;;   (goal-focus-fct (car (define-chunks-fct ; crée un nouveau chunk et le met dans le goal
+   ;;                          `((isa /* mettre nom de la procédure à goal */ 
+   ;;                              var1, value1
+   ;;                              var2, value2
+   ;;                              ...
+   ;;                              )))))
+   ;;)
+   ;;(run-full-time 10)
+   ;;*model-action*
 )
 
-
-
-
-
-
+(defun show-model-result (res state)
+   (if (buffer-read 'goal) ; s'il y a un chunk dans le buffers goal
+      (mod-focus-fct `(result ,res
+                        state ,state)
+      )
+      (goal-focus-fct (car (define-chunks-fct ; crée un nouveau chunk et le met dans le goal
+                             `(isa arrange-state result ,res
+                                 state ,state)
+                           )
+                        )
+      )
+      (run-full-time 10)
+)
 
 (define-model conductor
     
 ;;(sgp :v nil :esc t :lf 0.4 :bll 0.5 :ans 0.5 :rt 0 :ncnar nil)
 (sgp :esc t :lf .05)
+(install-device (open-exp-window "" :visible nil))
 
 ;; ---------- Add Chunk-types here ----------
 
