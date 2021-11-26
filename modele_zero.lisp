@@ -53,7 +53,7 @@
 
 
       (while not-win ; appeler le modèle tant qu'il n'a pas win
-         (format t "    On est dans le boucle ~d fois ~C~C" tour #\return #\linefeed)
+         (format t "    On est dans le boucle ~d fois ~C~C" tour #\return #\linefeed )
 
          ;; un genre de reset pour le modele je crois
          ;; 1er élément de la liste je crois, donc notre modele
@@ -158,6 +158,7 @@
                (setf nbWin (+ nbWin 1))
             )
          )
+         (format t "Fin let ~C~C" #\return #\linefeed )
       )
    )
    (format t "On a win ~d fois sur ~d essais" nbWin n-times)
@@ -204,31 +205,33 @@
    voitures-autour-list
 )
 
-(defun show-model-highway (voitures &optional (res state))
-   ;;(if (buffer-read 'goal) ;; s'il y a un chunk dans le buffers goal
-   ;;
-   ;;   ; Pas compris comment on choisi dans quel chunk mettre ça
-   ;;
-   ;;   ;; notre modele (le 'car' veut dire chopper la 1er element de la liste et pas la voiture en traduction anglaise !)
-   ;;   (mod-focus-fct `(id ,0  weight ,(slot-value (car voitures) 'poids) state ,"non accidente"))  ; chunk type car
-   ;;   (mod-focus-fct `(id ,0  positionX ,(slot-value (car voitures) 'positionX) positionY ,(slot-value (car voitures) 'positionY)))  ; chunk type position
-   ;;   (mod-focus-fct `(id ,0  vitesse ,(slot-value (car voitures) 'vitesse)))  ; chunk type vitesse
-   ;;
-   ;;   ;; la voiture accident (le 'cadr' veut dire chopper le 2nd element de la liste)
-   ;;   (mod-focus-fct `(id ,1  weight ,(slot-value (cadr voitures) 'poids) state ,"non accidente"))  ; chunk type car
-   ;;   (mod-focus-fct `(id ,1  positionX ,(slot-value (cadr voitures) 'positionX) positionY ,(slot-value (car voitures) 'positionY)))  ; chunk type position
-   ;;   (mod-focus-fct `(id ,1  vitesse ,(slot-value (cadr voitures) 'vitesse)))  ; chunk type vitesse
-   ;;
-   ;;   ; TODO
-   ;;   (goal-focus-fct (car (define-chunks-fct ; crée un nouveau chunk et le met dans le goal
-   ;;                          `((isa /* mettre nom de la procédure à goal */ 
-   ;;                              var1, value1
-   ;;                              var2, value2
-   ;;                              ...
-   ;;                              )))))
-   ;;)
-   ;;(run-full-time 10)
-   ;;*model-action*
+(defun show-model-highway (voitures &optional res state)
+   (format t "Goal buffer = ~s ~C~C" (buffer-read 'goal) #\return #\linefeed )
+   (if (buffer-read 'goal) ;; s'il y a un chunk dans le buffers goal
+   
+      (format t "Il y a quelque chose dans le goal ~C~C" #\return #\linefeed )      
+
+      (mod-focus-fct `(state ,"non accidente"  result," TODO"
+                        m_weight ,     (slot-value (car voitures) 'poids) 
+                        m_positionX ,  (slot-value (car voitures) 'positionX) 
+                        m_positionY ,  (slot-value (car voitures) 'positionY) 
+                        m_vitesse ,    (slot-value (car voitures) 'vitesse) 
+                        a_positionX , (slot-value (cadr voitures) 'positionX) 
+                        a_positionY , (slot-value (cadr voitures) 'positionY) 
+                        a_vitesse ,   (slot-value (cadr voitures) 'vitesse) 
+                     ) 
+      )
+      ;;; TODO
+      ;;(goal-focus-fct (car (define-chunks-fct ; crée un nouveau chunk et le met dans le goal
+      ;;                       `((isa /* mettre nom de la procédure à goal */ 
+      ;;                           var1, value1
+      ;;                           var2, value2
+      ;;                           ...
+      ;;                           )))))
+   )
+   (format t "Apres le if ~C~C" #\return #\linefeed )
+   (run-full-time 10)
+   *model-action*
 )
 
 (defun show-model-result (res state)
@@ -237,9 +240,10 @@
                         state ,state)
       )
       (goal-focus-fct (car (define-chunks-fct ; crée un nouveau chunk et le met dans le goal
-                             `(isa check_state
+                             `(isa checkState
                                  result ,res
-                                 state ,state)
+                                 state ,state
+                                 id, 0)
                            )
                         )
       )
@@ -275,16 +279,19 @@
    (sgp :esc t :lf .05)
    (install-device (open-exp-window "" :visible nil))
 
-   ;; ---------- Add Chunk-types here ----------
-   (chunk-type check_state result state)
-   (chunk-type car id weight state)
+   ;; ------------------------------ Add Chunk-types here ------------------------------
+
+   (chunk-type checkState state result m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse)
+   ; TODO : nom de chunktype a changer car copier coller
+   (chunk-type learned-info m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse)
+   (chunk-type car id weight)
    (chunk-type position id positionX positionY)
    (chunk-type speed id vitesse)
 
-   (chunk-type changeSpeed old new)
 
    (chunk-type turn xRelativePosition)
-   (chunk-type brake power)
+   (chunk-type brake power) ; technique 1
+   (chunk-type changeSpeed old new) ; ou rechnique 2
    (chunk-type otherCar relativeSpeed)
 
 
@@ -298,24 +305,44 @@
    (chunk-type rem-order over under)
    (chunk-type substract arg1 arg2 res)
 
-   ;; ---------- Add Chunks here ----------
+   (declare-buffer-usage goal checkState :all )
+
+   ;; ------------------------------ Add Chunks here ------------------------------
+
+   (define-chunks 
+      ;; state du goal je crois
+      (save_model_pos isa chunk)
+      (save_model_speed isa chunk)
+      (save_acc_pos isa chunk)
+      (save_acc_speed isa chunk)
+
+      (remembering isa chunk) 
+      (begin-model isa chunk)
+      ;(finish isa chunk) 
+      ;(retrieving isa chunk) 
+      ;(retrieving_2layers isa chunk) 
+      ;(retrieving_2layers_2 isa chunk)
+      ;(retrieving_2layers_3 isa chunk) 
+      ;(comparing_weight isa chunk) 
+      ;(comparing2 isa chunk)    
+   )
 
    (add-dm
-   ;; exemple d'une voiture
-   (voiture isa car id 0 weight "w")
-   (voitureP isa position id 0 positionX "x" positionY "y")
-   (voitureS isa speed id 0 vitesse "s")
+      ;; exemple d'une voiture
+      (voiture isa car id 0 weight "w")
+      (voitureP isa position id 0 positionX "x" positionY "y")
+      (voitureS isa speed id 0 vitesse "s")
 
-   ;; exemple d'une voiture accidenté pour le scénario de base
-   (camion isa car id 1 weight nil)
-   (camionP isa position id 1 positionX "x" positionY "y")
-   (camionS isa speed id 1 vitesse "s")
+      ;; exemple d'une voiture accidenté pour le scénario de base
+      (camion isa car id 1 weight nil)
+      (camionP isa position id 1 positionX "x" positionY "y")
+      (camionS isa speed id 1 vitesse "s")
 
-   (brakeSoft isa brake power 1)
-   (brakeHard isa brake power 3)
+      (brakeSoft isa brake power 1)
+      (brakeHard isa brake power 3)
 
-   (turnR isa turn xRelativePosition 1) 
-   (turnL isa turn xRelativePosition -1)
+      (turnR isa turn xRelativePosition 1) 
+      (turnL isa turn xRelativePosition -1)
 
    ;; changement de vitesse
 
@@ -341,19 +368,166 @@
 
       (r1 ISA rem-order over 0 under -1)
       (r2 ISA rem-order over 1 under 0)
-
-
-      ;; TEST
-      (first-goal ISA add arg1 5 arg2 2)
-
-      (detect isa chunk)
    )
 
    
-   ;; ---------- Add productions here ----------
+   ;; ------------------------------ Add productions here ------------------------------
+        
 
+   ;; --------------- Apprentissage et essais de rememoration  ---------------
+   ;; une petite explication simple et précise
+   ;; ------------------------------------------------------------------------
 
-   ;;etablir un premier goal focus pour le démarrage second-goal
+   (p start
+      =goal>
+         isa checkState
+         state nil
+         m_weight       =a
+         m_positionX    =b
+         m_positionY    =c
+         m_vitesse      =d
+         a_positionX    =x
+         a_positionY    =y
+         a_vitesse      =z
+      ==>
+      +retrieval> 
+         isa learned-info
+         m_weight       =a
+         m_positionX    =b
+         m_positionY    =c
+         m_vitesse      =d
+         a_positionX    =x
+         a_positionY    =y
+         a_vitesse      =z
+      =goal>
+         state remembering
+   )
+   
+   (p remember-organization
+      =goal>
+         isa checkState
+         state remembering
+      =retrieval>
+         ;; TODO : A CHANGER
+         isa learned-info
+         first-c =val1
+         second-c =val2
+      ==>
+      =goal>
+         ;; TODO : A CHANGER
+         state finish
+         first-c =val1
+         second-c =val2
+         result "win"
+   )
+
+   (p doesnt-remember-organization
+      =goal>
+         isa checkState
+         state remembering
+      ?retrieval>
+         buffer  failure
+      ==>
+      =goal>
+         state begin-model
+   )
+
+  (p begin
+      =goal>
+         state begin-model
+         ; TODO : savoir quoi prendre
+         c1 =a
+         c2 =b
+         c3 =c
+      ==>
+      +retrieval> 
+         ; TODO : savoir quoi retourner 
+         isa first1
+         v1 =a
+         v2 =b
+         v3 =c
+      =goal>
+         state retrieving
+   )
+   
+   ;; --------------- Start et enregistrement des donnees dans des chunks  ---------------
+   ;; il faut faire plusieurs procedures car on a plusieurs chunks car apparemment 
+   ;; cela essemble plus a un humain que de stocker ca en plusieurs fois
+   ;; ------------------------------------------------------------------------------------
+
+   (p set_model_0
+      =goal>
+         isa checkState
+         state save_model_weight
+         weight         =a
+      ==>
+      +retrieval> 
+         isa car
+         id             0
+         weight         a
+      =goal>
+         state save_model_pos
+   )
+
+   (p set_model_1
+      =goal>
+         isa checkState
+         state save_model_pos
+         m_positionX    =b
+         m_positionY    =c
+      ==>
+      +retrieval> 
+         isa position
+         id             0
+         positionX      b
+         positionY      c
+      =goal>
+         state save_model_speed
+   )
+
+   (p set_model_2
+      =goal>
+         isa checkState
+         state save_model_speed
+         m_vitesse      =d
+      ==>
+      +retrieval> 
+         isa speed
+         id             0
+         vitesse        d
+      =goal>
+         state save_acc_pos
+   )
+
+   (p set_accdt_1
+      =goal>
+         isa checkState
+         state save_acc_pos
+         a_positionX    =x
+         a_positionY    =y
+      ==>
+      +retrieval> 
+         isa position
+         id             1
+         positionX      x
+         positionY      y
+      =goal>
+         state save_acc_speed
+   )
+
+   (p set_accdt_2
+      =goal>
+         isa checkState
+         state save_acc_speed
+         m_vitesse      =z
+      ==>
+      +retrieval> 
+         isa speed
+         id             1
+         vitesse        z
+      =goal>
+         state remembering
+   )
 
    ;;;;;;;;;;;; Turns ;;;;;;;;;;;; 
    ;;(p turnL
@@ -498,22 +672,22 @@
    ;;
    ;;;;;;;;;;;;;; Take info ;;;;;;;;;;;;
    ;;
-   ;;;;(p lookLeft
-   ;;;;   =goal>
-   ;;;;    ISA                 a
-   ;;;;    a                   a
-   ;;;;  =retrieval>
-   ;;;;    ISA                 a
-   ;;;;    a                   a
-   ;;;;    a                   a
-   ;;;;==>
-   ;;;;  =goal>
-   ;;;;   ; ???
-   ;;;;  =retrieval>
-   ;;;;    ISA speed
-   ;;;;    a         a
-   ;;;;    a         a
-   ;;;;)
+   ;;(p lookLeft
+   ;;   =goal>
+   ;;    ISA                 a
+   ;;    a                   a
+   ;;  =retrieval>
+   ;;    ISA                 a
+   ;;    a                   a
+   ;;    a                   a
+   ;;==>
+   ;;  =goal>
+   ;;   ; ???
+   ;;  =retrieval>
+   ;;    ISA speed
+   ;;    a         a
+   ;;    a         a
+   ;;)
    ;;
    ;;
    ;;;;;;;;;;;;;; Addition ;;;;;;;;;;;;
@@ -583,7 +757,7 @@
          ISA        add-order
          low        =count
    )
-   (goal-focus first-goal)
+   ;;(goal-focus first-goal)
 
 )
 
