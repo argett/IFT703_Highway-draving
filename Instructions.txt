@@ -1,0 +1,2 @@
+Charger modele_zero.lisp dans le Control Panel d'ACTR
+Dans l'invite de commande ACTR écrire (place_elements 1)
