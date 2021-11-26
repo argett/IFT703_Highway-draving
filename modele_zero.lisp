@@ -39,7 +39,7 @@
 
 ;; Fonction pour placer les voitures sur les voies
 (defun place_elements (n-times &optional) ; TODO : (draw-highway nil))
-   (format t "ca marcheee")
+   (format t "ca marche ~C~C" #\return #\linefeed )
    (setf nbWin 0)
    (dotimes (i n-times)
       (setf tour 1)
@@ -47,11 +47,14 @@
       (setf res nil)
       (setf state nil)
 
+      (format t "Avant voiture ~C~C" #\return #\linefeed )
       (setf *voitures* (create-voitures)); Creation de notre voiture et de la voiture accident
       ;; TODO : creation d'autres usagers = (setf *usagers* (create-usagers)); Creation des voitures des autres usagers si complexification
 
 
       (while not-win ; appeler le modèle tant qu'il n'a pas win
+         (format t "    On est dans le boucle ~d fois ~C~C" tour #\return #\linefeed)
+
          ;; un genre de reset pour le modele je crois
          ;; 1er élément de la liste je crois, donc notre modele
          (setf (slot-value (car *voitures*) 'positionX) 0) 
@@ -60,11 +63,14 @@
          (setf (slot-value (cadr *voitures*) 'positionX) 0)
          (setf (slot-value (cadr *voitures*) 'positionY) 10)
 
+         (format t "CPT 1 ~C~C" #\return #\linefeed )
+
          (let ((choix-model (show-model-highway *voitures* res state))); Montre notre voiture et l'accident au modèle et enregistre la key pressée par le model
             ;; TODO
             ;; Quelles sont les strings a return pour choix-model ? freiner fort, freiner faible, tourner droite ou tourner gauche ?
 
             ;; 1 = frein faible, 2 = frein fort, 3 = turnR, 4 = turnL
+            (format t "CPT 2 ~C~C" #\return #\linefeed )
             (when (string-equal "1" choix-model) (progn
                (setf tour (+ tour 1)) ;; incrémente le nombre de tour
                (setf (slot-value (car *voitures*) 'vitesse) (- (slot-value (car *voitures*) 'vitesse) 1)) ;; "moyen ? faible ?")  int ou string ?
@@ -89,11 +95,13 @@
                (setf state "Un state à choisir"))
             ) ; TODO
 
+            (format t "CPT 3 ~C~C" #\return #\linefeed )
             ;; check si la vitesse ne passe pas en dessous de un
             (if (< (slot-value (car *voitures*) 'vitesse)  1)
                (setf (slot-value (car *voitures*) 'vitesse) 1)
             )  
                
+            (format t "CPT 4 ~C~C" #\return #\linefeed )
             (setf res "on verra") ;; changer les valeurs dans les if 
 
             ;; Les deux voitures sont sur la même case
@@ -140,6 +148,7 @@
     
 
             (when draw-highway
+               (format t "TODO : print l'autoroute")
                ;;(print-model (car *voitures*))
                ;;(print-accident (cadr *voitures*))
                ;;(print-route)
@@ -160,15 +169,15 @@
    (defparameter *model* (make-instance 'voiture))
    (defparameter *accident* (make-instance 'voiture))
 
-   (setf (slot-value model 'poids) 1) ; poids pas aléatoire pour l'instant 
-   (setf (slot-value model 'vitesse) 5)
-   (setf (slot-value model 'positionX) 0) ; voie du milieu
-   (setf (slot-value model 'positionY) 0) ; tout en bas de la route
+   (setf (slot-value *model* 'poids) 1) ; poids pas aléatoire pour l'instant 
+   (setf (slot-value *model* 'vitesse) 5)
+   (setf (slot-value *model* 'positionX) 0) ; voie du milieu
+   (setf (slot-value *model* 'positionY) 0) ; tout en bas de la route
    
-   (setf (slot-value accident 'poids) 1) ; poids pas aléatoire pour l'instant 
-   (setf (slot-value accident 'vitesse) 5)
-   (setf (slot-value accident 'positionX) 0) ; voie du milieu
-   (setf (slot-value accident 'positionY) 10) ; tout en haut de la route
+   (setf (slot-value *accident* 'poids) 1) ; poids pas aléatoire pour l'instant 
+   (setf (slot-value *accident* 'vitesse) 5)
+   (setf (slot-value *accident* 'positionX) 0) ; voie du milieu
+   (setf (slot-value *accident* 'positionY) 10) ; tout en haut de la route
    
    (defvar voitures-list (list *model* *accident*)) ; ajout des voitures dans une liste
 
