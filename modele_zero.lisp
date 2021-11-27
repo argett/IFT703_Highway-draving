@@ -403,8 +403,9 @@
          a_positionY    =y
          a_vitesse      =z
       ==>
-      +imaginal>
-         isa            learned-info
+      =goal>
+         isa            check-state
+         state          save_model_weight
          m_weight       =a
          m_positionX    =b
          m_positionY    =c
@@ -412,9 +413,6 @@
          a_positionX    =x
          a_positionY    =y
          a_vitesse      =z
-      =goal>
-         isa            check-state
-         state          save_model_weight
    )
    
    ;; --------------- Start et enregistrement des donnees dans des chunks  ---------------
@@ -426,74 +424,85 @@
       =goal>
          isa            check-state
          state          save_model_weight
-      =imaginal>
-         isa            learned-info
          m_weight       =a
       ==>
-      +retrieval> 
-         isa car
+      +imaginal>
+         isa            car
          id             0
-         weight         a
+         weight         =a
+      -imaginal> 
       =goal>
          state save_model_pos
    )
 
    (p set_model_1
       =goal>
-         isa check-state
-         state save_model_pos
+         isa            check-state
+         state          save_model_pos
          m_positionX    =b
          m_positionY    =c
+      ?imaginal>
+         state          free
       ==>
-      +retrieval> 
-         isa position
+      +imaginal> 
+         isa            position
          id             0
-         positionX      b
-         positionY      c
+         positionX      =b
+         positionY      =c
+      -imaginal> 
       =goal>
          state save_model_speed
    )
 
    (p set_model_2
       =goal>
-         isa check-state
-         state save_model_speed
+         isa            check-state
+         state          save_model_speed
          m_vitesse      =d
+      ?imaginal>
+         state          free
       ==>
-      +retrieval> 
-         isa speed
+      +imaginal> 
+         isa            speed
          id             0
-         vitesse        d
+         vitesse        =d
+      -imaginal> 
       =goal>
          state save_acc_pos
    )
 
    (p set_accdt_1
       =goal>
-         isa check-state
-         state save_acc_pos
+         isa            check-state
+         state          save_acc_pos
          a_positionX    =x
          a_positionY    =y
+      ?imaginal>
+         state          free
       ==>
-      +retrieval> 
-         isa position
+      +imaginal> 
+         isa            position
          id             1
-         positionX      x
-         positionY      y
+         positionX      =x
+         positionY      =y
+      -imaginal> 
       =goal>
          state save_acc_speed
    )
 
    (p set_accdt_2
       =goal>
-         isa check-state
-         state save_acc_speed
+         isa            check-state
+         state          save_acc_speed
          m_vitesse      =z
+      ?imaginal>
+         state          free
       ==>
-      +retrieval> 
-         isa speed
+      +imaginal> 
+         isa            speed
          id             1
-         vitesse        z
+         vitesse        =z
+      -imaginal> 
       =goal>
          state remembering
    )
@@ -502,7 +511,7 @@
    ;; --------------- Enregistrement des donnees  ---------------
    ;; 
    ;; 
-   ;; ------------------------------------------------------------------------------------
+   ;; -----------------------------------------------------------
 
 
    (p remember-organization
