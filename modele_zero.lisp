@@ -223,7 +223,8 @@
                      ) 
       )
       (goal-focus-fct (car (define-chunks-fct ; crée un nouveau chunk et le met dans le goal
-                             `(( m_weight    ,(slot-value (car voitures) 'poids) 
+                             `((isa check-state 
+                                m_weight    ,(slot-value (car voitures) 'poids) 
                                  m_positionX ,(slot-value (car voitures) 'positionX) 
                                  m_positionY ,(slot-value (car voitures) 'positionY) 
                                  m_vitesse   ,(slot-value (car voitures) 'vitesse) 
@@ -231,7 +232,7 @@
                                  a_positionY ,(slot-value (cadr voitures) 'positionY) 
                                  a_vitesse   ,(slot-value (cadr voitures) 'vitesse) 
                                  result      ,nil
-                                 state    save_model_weight
+                                 state       start
                               ))
                            )
                         )
@@ -339,14 +340,14 @@
 
    (add-dm
       ;; exemple d'une voiture
-      (voiture isa car id 0 weight "w")
-      (voitureP isa position id 0 positionX "x" positionY "y")
-      (voitureS isa speed id 0 vitesse "s")
-
-      ;; exemple d'une voiture accidenté pour le scénario de base
-      (camion isa car id 1 weight nil)
-      (camionP isa position id 1 positionX "x" positionY "y")
-      (camionS isa speed id 1 vitesse "s")
+      ;(voiture isa car id 0 weight "w")
+      ;(voitureP isa position id 0 positionX "x" positionY "y")
+      ;(voitureS isa speed id 0 vitesse "s")
+;
+      ;;; exemple d'une voiture accidenté pour le scénario de base
+      ;(camion isa car id 1 weight nil)
+      ;(camionP isa position id 1 positionX "x" positionY "y")
+      ;(camionS isa speed id 1 vitesse "s")
 
       (brakeSoft isa brake power 1)
       (brakeHard isa brake power 3)
@@ -388,10 +389,12 @@
    ;; une petite explication simple et précise
    ;; ------------------------------------------------------------------------
 
+
+
    (p start
       =goal>
-         isa check-state
-         state nil
+         isa            check-state
+         state          start
          m_weight       =a
          m_positionX    =b
          m_positionY    =c
@@ -400,8 +403,8 @@
          a_positionY    =y
          a_vitesse      =z
       ==>
-      +retrieval> 
-         isa learned-info
+      +imaginal>
+         isa            learned-info
          m_weight       =a
          m_positionX    =b
          m_positionY    =c
@@ -410,54 +413,8 @@
          a_positionY    =y
          a_vitesse      =z
       =goal>
-         state remembering
-   )
-   
-   (p remember-organization
-      =goal>
-         isa check-state
-         state remembering
-      =retrieval>
-         ;; TODO : A CHANGER
-         isa learned-info
-         first-c =val1
-         second-c =val2
-      ==>
-      =goal>
-         ;; TODO : A CHANGER
-         state finish
-         first-c =val1
-         second-c =val2
-         result "win"
-   )
-
-   (p doesnt-remember-organization
-      =goal>
-         isa check-state
-         state remembering
-      ?retrieval>
-         buffer  failure
-      ==>
-      =goal>
-         state begin-model
-   )
-
-  (p begin
-      =goal>
-         state begin-model
-         ; TODO : savoir quoi prendre
-         c1 =a
-         c2 =b
-         c3 =c
-      ==>
-      +retrieval> 
-         ; TODO : savoir quoi retourner 
-         isa first1
-         v1 =a
-         v2 =b
-         v3 =c
-      =goal>
-         state retrieving
+         isa            check-state
+         state          save_model_weight
    )
    
    ;; --------------- Start et enregistrement des donnees dans des chunks  ---------------
@@ -469,7 +426,9 @@
       =goal>
          isa            check-state
          state          save_model_weight
-         weight         =a
+      =imaginal>
+         isa            learned-info
+         m_weight       =a
       ==>
       +retrieval> 
          isa car
@@ -537,6 +496,60 @@
          vitesse        z
       =goal>
          state remembering
+   )
+
+
+   ;; --------------- Enregistrement des donnees  ---------------
+   ;; 
+   ;; 
+   ;; ------------------------------------------------------------------------------------
+
+
+   (p remember-organization
+      =goal>
+         isa check-state
+         state remembering
+      =retrieval>
+         ;; TODO : A CHANGER
+         isa learned-info
+         first-c =val1
+         second-c =val2
+      ==>
+      =goal>
+         ;; TODO : A CHANGER
+         state finish
+         first-c =val1
+         second-c =val2
+         result "win"
+   )
+
+   (p doesnt-remember-organization
+      =goal>
+         isa check-state
+         state remembering
+      ?retrieval>
+         buffer  failure
+      ==>
+      =goal>
+         state begin-model
+   )
+
+  (p begin
+      =goal>
+         state begin-model
+         ; TODO : savoir quoi prendre
+         c1 =a
+         c2 =b
+         c3 =c
+      ==>
+      +retrieval> 
+         ; TODO : savoir quoi retourner 
+         isa first1
+         v1 =a
+         v2 =b
+         v3 =c
+      =goal>
+         state retrieving
    )
 
    ;;;;;;;;;;;; Turns ;;;;;;;;;;;; 
