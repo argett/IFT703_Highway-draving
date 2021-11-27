@@ -1,5 +1,6 @@
 (clear-all)
 
+(defvar *model-action* nil) ; La variable que le model devra remplir (liste de valise)
 ;; Classe voiture
 (defclass voiture()
    (poids
@@ -52,7 +53,7 @@
       ;; TODO : creation d'autres usagers = (setf *usagers* (create-usagers)); Creation des voitures des autres usagers si complexification
 
 
-      (while not-win ; appeler le modèle tant qu'il n'a pas win
+      (while not-win ; appeler le modèle tant qu'il n'a pas win ou pas crash
          (format t "    On est dans le boucle ~d fois ~C~C" tour #\return #\linefeed )
 
          ;; un genre de reset pour le modele je crois
@@ -66,6 +67,7 @@
          (format t "CPT 1 ~C~C" #\return #\linefeed )
 
          (let ((choix-model (show-model-highway *voitures* res state))); Montre notre voiture et l'accident au modèle et enregistre la key pressée par le model
+            (format t "Choix = ~s ~C~C" choix-model #\return #\linefeed )
             ;; TODO
             ;; Quelles sont les strings a return pour choix-model ? freiner fort, freiner faible, tourner droite ou tourner gauche ?
 
@@ -100,6 +102,7 @@
             (if (< (slot-value (car *voitures*) 'vitesse)  1)
                (setf (slot-value (car *voitures*) 'vitesse) 1)
             )  
+            ;; TODO : inverse
                
             (format t "CPT 4 ~C~C" #\return #\linefeed )
             (setf res "on verra") ;; changer les valeurs dans les if 
@@ -207,32 +210,39 @@
 
 (defun show-model-highway (voitures &optional res state)
    (format t "Goal buffer = ~s ~C~C" (buffer-read 'goal) #\return #\linefeed )
-   (if (buffer-read 'goal) ;; s'il y a un chunk dans le buffers goal
-   
-      (format t "Il y a quelque chose dans le goal ~C~C" #\return #\linefeed )      
-
-      (mod-focus-fct `(state ,"non accidente"  result," TODO"
-                        m_weight ,     (slot-value (car voitures) 'poids) 
-                        m_positionX ,  (slot-value (car voitures) 'positionX) 
-                        m_positionY ,  (slot-value (car voitures) 'positionY) 
-                        m_vitesse ,    (slot-value (car voitures) 'vitesse) 
-                        a_positionX , (slot-value (cadr voitures) 'positionX) 
-                        a_positionY , (slot-value (cadr voitures) 'positionY) 
-                        a_vitesse ,   (slot-value (cadr voitures) 'vitesse) 
+   (if (buffer-read 'goal) ;; s'il y a un chunk dans le buffers goal 
+      (mod-focus-fct `(state ,"non accidente "
+                        result      ,"TODO"
+                        m_weight    ,(slot-value (car voitures) 'poids) 
+                        m_positionX ,(slot-value (car voitures) 'positionX) 
+                        m_positionY ,(slot-value (car voitures) 'positionY) 
+                        m_vitesse   ,(slot-value (car voitures) 'vitesse) 
+                        a_positionX ,(slot-value (cadr voitures) 'positionX) 
+                        a_positionY ,(slot-value (cadr voitures) 'positionY) 
+                        a_vitesse   ,(slot-value (cadr voitures) 'vitesse) 
                      ) 
       )
-      ;;; TODO
-      ;;(goal-focus-fct (car (define-chunks-fct ; crée un nouveau chunk et le met dans le goal
-      ;;                       `((isa /* mettre nom de la procédure à goal */ 
-      ;;                           var1, value1
-      ;;                           var2, value2
-      ;;                           ...
-      ;;                           )))))
+      (goal-focus-fct (car (define-chunks-fct ; crée un nouveau chunk et le met dans le goal
+                             `(( m_weight    ,(slot-value (car voitures) 'poids) 
+                                 m_positionX ,(slot-value (car voitures) 'positionX) 
+                                 m_positionY ,(slot-value (car voitures) 'positionY) 
+                                 m_vitesse   ,(slot-value (car voitures) 'vitesse) 
+                                 a_positionX ,(slot-value (cadr voitures) 'positionX) 
+                                 a_positionY ,(slot-value (cadr voitures) 'positionY) 
+                                 a_vitesse   ,(slot-value (cadr voitures) 'vitesse) 
+                                 result      ,nil
+                                 state    save_model_weight
+                              ))
+                           )
+                        )
+      )
    )
-   (format t "Apres le if ~C~C" #\return #\linefeed )
+   (format t "ACTR Action ~C~C" #\return #\linefeed )
    (run-full-time 10)
    *model-action*
+   (format t "LISP reprend le controle ~C~C" #\return #\linefeed )
 )
+
 
 (defun show-model-result (res state)
    (if (buffer-read 'goal) ; s'il y a un chunk dans le buffers goal
@@ -240,7 +250,7 @@
                         state ,state)
       )
       (goal-focus-fct (car (define-chunks-fct ; crée un nouveau chunk et le met dans le goal
-                             `(isa checkState
+                             `(isa check-state
                                  result ,res
                                  state ,state
                                  id, 0)
@@ -281,7 +291,7 @@
 
    ;; ------------------------------ Add Chunk-types here ------------------------------
 
-   (chunk-type checkState state result m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse)
+   (chunk-type check-state state result m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse)
    ; TODO : nom de chunktype a changer car copier coller
    (chunk-type learned-info m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse)
    (chunk-type car id weight)
@@ -305,7 +315,7 @@
    (chunk-type rem-order over under)
    (chunk-type substract arg1 arg2 res)
 
-   (declare-buffer-usage goal checkState :all )
+   ;(declare-buffer-usage goal check-state :all )
 
    ;; ------------------------------ Add Chunks here ------------------------------
 
@@ -346,8 +356,8 @@
 
    ;; changement de vitesse
 
-      (v1 ISA changeSpeed old "rapide" new "moyen")
-      (v2 ISA changeSpeed old "moyen" new "lent")
+      ;(v1 ISA changeSpeed old "rapide" new "moyen")
+      ;(v2 ISA changeSpeed old "moyen" new "lent")
 
    ;; addition
       ; servir a compter les voiture et tourner
@@ -366,8 +376,8 @@
       ; soustaction (l'autoroute est limitée à 3 voies)
       ; tourner
 
-      (r1 ISA rem-order over 0 under -1)
-      (r2 ISA rem-order over 1 under 0)
+      ;(r1 ISA rem-order over 0 under -1)
+      ;(r2 ISA rem-order over 1 under 0)
    )
 
    
@@ -380,7 +390,7 @@
 
    (p start
       =goal>
-         isa checkState
+         isa check-state
          state nil
          m_weight       =a
          m_positionX    =b
@@ -405,7 +415,7 @@
    
    (p remember-organization
       =goal>
-         isa checkState
+         isa check-state
          state remembering
       =retrieval>
          ;; TODO : A CHANGER
@@ -423,7 +433,7 @@
 
    (p doesnt-remember-organization
       =goal>
-         isa checkState
+         isa check-state
          state remembering
       ?retrieval>
          buffer  failure
@@ -457,8 +467,8 @@
 
    (p set_model_0
       =goal>
-         isa checkState
-         state save_model_weight
+         isa            check-state
+         state          save_model_weight
          weight         =a
       ==>
       +retrieval> 
@@ -471,7 +481,7 @@
 
    (p set_model_1
       =goal>
-         isa checkState
+         isa check-state
          state save_model_pos
          m_positionX    =b
          m_positionY    =c
@@ -487,7 +497,7 @@
 
    (p set_model_2
       =goal>
-         isa checkState
+         isa check-state
          state save_model_speed
          m_vitesse      =d
       ==>
@@ -501,7 +511,7 @@
 
    (p set_accdt_1
       =goal>
-         isa checkState
+         isa check-state
          state save_acc_pos
          a_positionX    =x
          a_positionY    =y
@@ -517,7 +527,7 @@
 
    (p set_accdt_2
       =goal>
-         isa checkState
+         isa check-state
          state save_acc_speed
          m_vitesse      =z
       ==>
@@ -757,7 +767,7 @@
          ISA        add-order
          low        =count
    )
-   ;;(goal-focus first-goal)
+   ;(goal-focus check-state)
 
 )
 
