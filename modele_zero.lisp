@@ -39,74 +39,98 @@
 )
 
 ;; Fonction pour placer les voitures sur les voies
-(defun place_elements (n-times &optional) ; TODO : (draw-highway nil))
-   (format t "ca marche ~C~C" #\return #\linefeed )
-   (setf nbWin 0)
-   (dotimes (i n-times)
-      (setf tour 1)
-      (setf not-win t) ; t = true, nil = false
-      (setf res nil)
-      (setf state nil)
+(defun place_elements (n-times &optional (draw-highway nil))
+   
+   (let (need-to-remove (add-key-monitor))
+   
+      (format t "ca marche ~C~C" #\return #\linefeed )
+      (setf nbWin 0)
+      (dotimes (i n-times)
+         (setf tour 1)
+         (setf not-win t) ; t = true, nil = false
+         (setf res nil)
+         (setf state nil)
 
-      (format t "Avant voiture ~C~C" #\return #\linefeed )
-      (setf *voitures* (create-voitures)); Creation de notre voiture et de la voiture accident
-      ;; TODO : creation d'autres usagers = (setf *usagers* (create-usagers)); Creation des voitures des autres usagers si complexification
+         (format t "Avant voiture ~C~C" #\return #\linefeed )
+         (setf *voitures* (create-voitures)); Creation de notre voiture et de la voiture accident
+         ;; TODO : creation d'autres usagers = (setf *usagers* (create-usagers)); Creation des voitures des autres usagers si complexification
 
+         
+         ;(let (window (open-exp-window "UNE FENETRE")))
 
-      (while not-win ; appeler le modèle tant qu'il n'a pas win ou pas crash
-         (format t "    On est dans le boucle ~d fois ~C~C" tour #\return #\linefeed )
+         (while not-win ; appeler le modèle tant qu'il n'a pas win ou pas crash
+            (format t "    On est dans le boucle ~d fois ~C~C" tour #\return #\linefeed )
+         
+            ;; un genre de reset pour le modele je crois
+            ;; 1er élément de la liste je crois, donc notre modele
+            (setf (slot-value (car *voitures*) 'positionX) 0) 
+            (setf (slot-value (car *voitures*) 'positionY) 0) 
+            ;; 2nd élément de la liste je cris, donc la voiture accident
+            (setf (slot-value (cadr *voitures*) 'positionX) 0)
+            (setf (slot-value (cadr *voitures*) 'positionY) 10)
 
-         ;; un genre de reset pour le modele je crois
-         ;; 1er élément de la liste je crois, donc notre modele
-         (setf (slot-value (car *voitures*) 'positionX) 0) 
-         (setf (slot-value (car *voitures*) 'positionY) 0) 
-         ;; 2nd élément de la liste je cris, donc la voiture accident
-         (setf (slot-value (cadr *voitures*) 'positionX) 0)
-         (setf (slot-value (cadr *voitures*) 'positionY) 10)
+            (let ((choix-model (show-model-highway *voitures* res state))); Montre notre voiture et l'accident au modèle et enregistre la key pressée par le model
+               (format t "L'action choisie par le modele est ~s ~C~C" choix-model #\return #\linefeed )
 
-         (let ((choix-model (show-model-highway *voitures* res state))); Montre notre voiture et l'accident au modèle et enregistre la key pressée par le model
-            (format t "L'action choisie par le modele est ~s ~C~C" choix-model #\return #\linefeed )
+               ;; 1 = frein faible, 2 = frein fort, 3 = turnR, 4 = turnL
+               (format t "CPT POST LET CHOIX MODEL ~C~C" #\return #\linefeed )
+               (when (string-equal "1" choix-model) (progn
+                  (setf tour (+ tour 1)) ;; incrémente le nombre de tour
+                  (setf (slot-value (car *voitures*) 'vitesse) (- (slot-value (car *voitures*) 'vitesse) 1)) ;; "moyen ? faible ?")  int ou string ?
+                  (setf state "Un state à choisir"))
+               ) ; TODO
 
-            ;; 1 = frein faible, 2 = frein fort, 3 = turnR, 4 = turnL
-            (format t "CPT 2 ~C~C" #\return #\linefeed )
-            (when (string-equal "1" choix-model) (progn
-               (setf tour (+ tour 1)) ;; incrémente le nombre de tour
-               (setf (slot-value (car *voitures*) 'vitesse) (- (slot-value (car *voitures*) 'vitesse) 1)) ;; "moyen ? faible ?")  int ou string ?
-               (setf state "Un state à choisir"))
-            ) ; TODO
+               (when (string-equal "2" choix-model) (progn
+                  (setf tour (+ tour 1)) ;; incrémente le nombre de tour
+                  (setf (slot-value (car *voitures*) 'vitesse) (- (slot-value (car *voitures*) 'vitesse) 2)) ;; "moyen ? faible ?")  int ou string ?
+                  (setf state "Un state à choisir"))
+               ) ; TODO
 
-            (when (string-equal "2" choix-model) (progn
-               (setf tour (+ tour 1)) ;; incrémente le nombre de tour
-               (setf (slot-value (car *voitures*) 'vitesse) (- (slot-value (car *voitures*) 'vitesse) 2)) ;; "moyen ? faible ?")  int ou string ?
-               (setf state "Un state à choisir"))
-            ) ; TODO
+               (when (string-equal "3" choix-model) (progn
+                  (setf tour (+ tour 1)) ;; incrémente le nombre de tour?
+                  (setf (slot-value (car *voitures*) 'positionX) (+ (slot-value (car *voitures*) 'positionX) 1))
+                  (setf state "Un state à choisir"))
+               ) ; TODO
 
-            (when (string-equal "3" choix-model) (progn
-               (setf tour (+ tour 1)) ;; incrémente le nombre de tour?
-               (setf (slot-value (car *voitures*) 'positionX) (+ (slot-value (car *voitures*) 'positionX) 1))
-               (setf state "Un state à choisir"))
-            ) ; TODO
+               (when (string-equal "4" choix-model) (progn
+                  (setf tour (+ tour 1)) ;; incrémente le nombre de tour
+                  (setf (slot-value (car *voitures*) 'positionX) (- (slot-value (car *voitures*) 'positionX) 1))
+                  (setf state "Un state à choisir"))
+               ) ; TODO
 
-            (when (string-equal "4" choix-model) (progn
-               (setf tour (+ tour 1)) ;; incrémente le nombre de tour
-               (setf (slot-value (car *voitures*) 'positionX) (- (slot-value (car *voitures*) 'positionX) 1))
-               (setf state "Un state à choisir"))
-            ) ; TODO
+               (format t "CPT 3 ~C~C" #\return #\linefeed )
+               ;; check si la vitesse ne passe pas en dessous de un
+               (if (< (slot-value (car *voitures*) 'vitesse)  1)
+                  (setf (slot-value (car *voitures*) 'vitesse) 1)
+               )  
+               ;; TODO : inverse
+                  
+               (format t "CPT 4 ~C~C" #\return #\linefeed )
+               (setf res "on verra") ;; changer les valeurs dans les if 
 
-            (format t "CPT 3 ~C~C" #\return #\linefeed )
-            ;; check si la vitesse ne passe pas en dessous de un
-            (if (< (slot-value (car *voitures*) 'vitesse)  1)
-               (setf (slot-value (car *voitures*) 'vitesse) 1)
-            )  
-            ;; TODO : inverse
-               
-            (format t "CPT 4 ~C~C" #\return #\linefeed )
-            (setf res "on verra") ;; changer les valeurs dans les if 
+               ;; Les deux voitures sont sur la même case
+               (if (= (slot-value (car *voitures*) 'positionX)  (slot-value (cadr *voitures*) 'positionX))  
+                  (if (= (slot-value (car *voitures*) 'positionY)  (slot-value (cadr *voitures*) 'positionY))  
+                     (setf res "crash") 
 
-            ;; Les deux voitures sont sur la même case
-            (if (= (slot-value (car *voitures*) 'positionX)  (slot-value (cadr *voitures*) 'positionX))  
-               (if (= (slot-value (car *voitures*) 'positionY)  (slot-value (cadr *voitures*) 'positionY))  
-                  (setf res "crash") 
+                     ;; TODO : code a priori qu'on doit faire
+                     ;(setf state " - un state a definir - ")
+                     ;(setf not-win nil)
+                     ;(show-model-result res state)
+
+                     ;; pourquoi ce unless 0 ? eut être à enlever
+                     (progn (setf not-win nil)
+                        (unless (string-equal choix-model "0")(progn 
+                           (setf state "final")
+                           (show-model-result res state))
+                        )
+                     )
+                  )
+               )
+
+               ;; La voiture a dépasse l'accident, on gagne
+               (if (> (slot-value (car *voitures*) 'positionX)  (slot-value (cadr *voitures*) 'positionX))    
+                  (setf res "win") ;; Les deux voitures sont sur la même case
 
                   ;; TODO : code a priori qu'on doit faire
                   ;(setf state " - un state a definir - ")
@@ -121,46 +145,32 @@
                      )
                   )
                )
-            )
 
-            ;; La voiture a dépasse l'accident, on gagne
-            (if (> (slot-value (car *voitures*) 'positionX)  (slot-value (cadr *voitures*) 'positionX))    
-               (setf res "win") ;; Les deux voitures sont sur la même case
+               ;;(loop for usager in *usagers* ; on traite toutes les voitures autour
+               ;;   ; TODO : faire des if crash sur chaque voiture
+               ;;)
+      
 
-               ;; TODO : code a priori qu'on doit faire
-               ;(setf state " - un state a definir - ")
-               ;(setf not-win nil)
-               ;(show-model-result res state)
+               (when draw-highway
+                  (format t "TODO : print l'autoroute")
+                  ;;(print-model (car *voitures*))
+                  ;;(print-accident (cadr *voitures*))
+                  ;;(print-route)
+               )
 
-               ;; pourquoi ce unless 0 ? eut être à enlever
-               (progn (setf not-win nil)
-                  (unless (string-equal choix-model "0")(progn 
-                     (setf state "final")
-                     (show-model-result res state))
-                  )
+               (if (= res "win")
+                  (setf nbWin (+ nbWin 1))
                )
             )
-
-            ;;(loop for usager in *usagers* ; on traite toutes les voitures autour
-            ;;   ; TODO : faire des if crash sur chaque voiture
-            ;;)
-    
-
-            (when draw-highway
-               (format t "TODO : print l'autoroute")
-               ;;(print-model (car *voitures*))
-               ;;(print-accident (cadr *voitures*))
-               ;;(print-route)
-            )
-
-            (if (= res "win")
-               (setf nbWin (+ nbWin 1))
-            )
+            (format t "Fin let ~C~C" #\return #\linefeed )
          )
-         (format t "Fin let ~C~C" #\return #\linefeed )
       )
+      (format t "On a win ~d fois sur ~d essais" nbWin n-times)
    )
-   (format t "On a win ~d fois sur ~d essais" nbWin n-times)
+   
+   (when need-to-remove
+      (remove-key-monitor)
+   )
 )
 
 
@@ -190,16 +200,19 @@
    (defparameter *usager3* (make-instance 'voiture))
 
    ; boucle qui génère les voitures autours (innutile au début)
-   ;;(loop for voiture in voitures-autour-list 
-   ;;   do (progn
-   ;;         (setf (slot-value voiture 'poids) (1) ; poids pas aléatoire pour l'instant 
-   ;;         (setf (slot-value voiture 'vitesse) ("moyen")
-   ;;         (setf (slot-value voiture 'positionX) (act-r-random 2) ; voie du milieu
-   ;;         (setf (slot-value voiture 'positionY) (3+ (act-r-random 5))) ; quelque part sur l'axe y
-   ;;         ;; Dimension selon la catégorie
-   ;;         (case (slot-value voiture 'positionX)
-   ;;            (1 (progn (setf (slot-value voiture 'positionX)-1)))
-   ;;            (3 (progn (setf (slot-value voiture 'positionX) 1))))
+   (loop for voiture in voitures-autour-list 
+      do (progn
+            (setf (slot-value voiture 'poids) 1) ; poids pas aléatoire pour l'instant 
+            (setf (slot-value voiture 'vitesse) moyen)
+            (setf (slot-value voiture 'positionX) (act-r-random 2)) ; voie du milieu
+            (setf (slot-value voiture 'positionY) (3+ (act-r-random 5))) ; quelque part sur l'axe y
+            ;; Dimension selon la catégorie
+            (case (slot-value voiture 'positionX)
+               (1 (progn (setf (slot-value voiture 'positionX)-1)))
+               (3 (progn (setf (slot-value voiture 'positionX) 1)))
+            )
+            )
+   )
    (defvar voitures-autour-list (list *usager1* *usager2*  *usager3*))
    voitures-autour-list
 )
@@ -237,7 +250,7 @@
    (format t "ACTR Action ~C~C" #\return #\linefeed )
    (run-full-time 10)
    *model-action*
-   (format t "LISP reprend le controle ~C~C" #\return #\linefeed )
+   (format t "LISP reprend le controle avec ~s ~C~C" *model-action* #\return #\linefeed )
 )
 
 
@@ -258,45 +271,59 @@
    (run-full-time 10)
 )
 
-(defun draw-graph (points)
-  (let ((w (open-exp-window "Data" :width 550 :height 460 :visible t)))
-      (allow-event-manager w)
-      (add-line-to-exp-window '(50 0) '(50 420) :color 'white :window "Data")
+;;(defun draw-graph (points)
+;;  (let ((w (open-exp-window "Data" :width 550 :height 460 :visible t)))
+;;      (allow-event-manager w)
+;;      (add-line-to-exp-window '(50 0) '(50 420) :color 'white :window "Data")
+;;
+;;      (dotimes (i 11)
+;;         (add-text-to-exp-window :x 5 :y (+ 5 (* i 40)) :width 35 :text (format nil "~3,1f" (* (- 1 (* i .1)) 3)) :window "Data")
+;;         (add-line-to-exp-window (list 45 (+ 10 (* i 40))) (list 550 (+ 10 (* i 40))) :color 'white :window "Data")
+;;      )
+;;    
+;;      (let ((x 50))
+;;         (mapcar (lambda (a b) (add-line-to-exp-window  (list x (floor (- 410 (* a 400))))
+;;                                                         (list (incf x 25) (floor (- 410 (* b 400))))
+;;                                                         :color 'blue :window "Data")
+;;                  )
+;;            (butlast points) (cdr points)
+;;         )
+;;      )
+;;      (allow-event-manager w)
+;;   )
+;;)
 
-      (dotimes (i 11)
-         (add-text-to-exp-window :x 5 :y (+ 5 (* i 40)) :width 35 :text (format nil "~3,1f" (* (- 1 (* i .1)) 3)) :window "Data")
-         (add-line-to-exp-window (list 45 (+ 10 (* i 40))) (list 550 (+ 10 (* i 40))) :color 'white :window "Data")
-      )
-    
-      (let ((x 50))
-         (mapcar (lambda (a b) (add-line-to-exp-window  (list x (floor (- 410 (* a 400))))
-                                                         (list (incf x 25) (floor (- 410 (* b 400))))
-                                                         :color 'blue :window "Data")
-                  )
-            (butlast points) (cdr points)
-         )
-      )
-      (allow-event-manager w)
+
+(defvar *key-monitor-installed* nil)
+
+(defun add-key-monitor ()
+   (unless *key-monitor-installed*
+      (add-act-r-command "highway-key-press" 'respond-to-keypress 
+                        "highway task key output monitor")
+      (monitor-act-r-command "output-key" "highway-key-press")
+      (setf *key-monitor-installed* t)
    )
+   (format t "CPT MONITOR APRES ~C~C" #\return #\linefeed )
 )
 
 (defun respond-to-keypress (model key)
+   (format t "Respond to keypress avant model = ~s ~C~C" model #\return #\linefeed )
    (if model
       (setf *model-action* key)
-      ;;(setf *human-action* key)
+      (clear-exp-window)
    )
+
+   (format t "Respond to keypress apres key = ~s ~C~C" key #\return #\linefeed )
+   (format t "Respond to keypress apres *model action* = ~s ~C~C" *model-action* #\return #\linefeed )
+   (format t "Respond to keypress apres model action = ~s ~C~C" model-action #\return #\linefeed )
+   
+   )
+
+(defun remove-key-monitor ()
+  (remove-act-r-command-monitor "output-key" "highway-key-press")
+  (remove-act-r-command "highway-key-press")
+  (setf *key-monitor-installed* nil)
 )
-
-;; marche pas (defvar *key-monitor-installed* nil)
-;; marche pas (defun add-key-monitor ()
-;; marche pas   (unless *key-monitor-installed*
-;; marche pas     (add-act-r-command "highway-key-press" 'respond-to-keypress 
-;; marche pas                        "highway task key output monitor")
-;; marche pas     (monitor-act-r-command "output-key" "highway-key-press")
-;; marche pas     (setf *key-monitor-installed* t)
-;; marche pas    )
-;; marche pas )
-
 ;; marche pas (defmethod rpm-window-key-event-handler ((win rpm-window) key)
 ;; marche pas   (if (eq win (current-device))
 ;; marche pas       (setf *model-action* (string key))
@@ -308,8 +335,8 @@
 
 
 
-(defmethod rpm-window-key-event-handler ((win rpm-window) key)
-  (setf *model-action* (string key)))
+;(defmethod rpm-window-key-event-handler ((win rpm-window) key)
+;  (setf *model-action* (string key)))
 
 
 
@@ -351,6 +378,7 @@
       (begin-model      isa chunk)
       (choice           isa chunk) 
       (applyAction      isa chunk) 
+      (finish           isa chunk) 
    )
 
    (add-dm
@@ -366,26 +394,6 @@
 
       ;(v1 ISA changeSpeed old "rapide" new "moyen")
       ;(v2 ISA changeSpeed old "moyen" new "lent")
-
-   ;; addition
-      ; servir a compter les voiture et tourner
-
-      (c0 ISA add-order low -1 high 0)
-      (c1 ISA add-order low 0 high 1)
-      (c2 ISA add-order low 1 high 2)
-      (c3 ISA add-order low 2 high 3)
-      (c4 ISA add-order low 3 high 4)
-      (c5 ISA add-order low 4 high 5)
-      (c6 ISA add-order low 5 high 6)
-      (c7 ISA add-order low 6 high 7)
-      (c8 ISA add-order low 7 high 8)
-      (c9 ISA add-order low 8 high 9)
-      
-      ; soustaction (l'autoroute est limitée à 3 voies)
-      ; tourner
-
-      ;(r1 ISA rem-order over 0 under -1)
-      ;(r2 ISA rem-order over 1 under 0)
    )
 
    
@@ -558,7 +566,7 @@
          isa            learned-info
          result         =res
          t_left         =tl
-         t_rigt         =tr
+         t_right        =tr
          b_soft         =bs
          b_hard         =bh
 ;; innutile je pense
@@ -575,7 +583,7 @@
          state          applyAction
          result         =res
          t_left         =tl
-         t_rigt         =tr
+         t_right        =tr
          b_soft         =bs
          b_hard         =bh
 ;; innutile je pense
@@ -665,6 +673,7 @@
       ; Quand on sait pas quoi faire on freine doucement
       =goal>
          ISA            brake
+         state          activate
          power          1
 
    )
@@ -673,26 +682,36 @@
    
    (p brakeSoft
       =goal>
-       ISA                  brake
-       power                1
+         isa            brake
+         state          activate
+         power          1
+     ?manual>
+         state          free
    ==>
       =goal>
-       state                nil
+         isa            check-state
+         state          finish
+         action         "1"
       +manual>
-       cmd                  press-key
-       key                  "1"
+         cmd            press-key
+         key            "1"
    )
    
    (p brakeHard
       =goal>
-       ISA                 brake
-       power               2
+         ISA            brake
+         state          activate
+         power          2
+     ?manual>
+         state          free
    ==>
       =goal>
-       state               nil
+         isa            check-state
+         state          finish
+         action         "2"
       +manual>
-       cmd                 press-key
-       key                 "2"
+         cmd            press-key
+         key            "2"
    )
 
    ;;;;;;;;;;;; Turns ;;;;;;;;;;;; 
@@ -700,26 +719,35 @@
    (p turnR
       =goal>
          ISA                  turn
+         state                activate
          xRelativePosition    1
+     ?manual>
+         state          free
    ==>
       =goal>
-         state                nil
+         isa            check-state
+         state          finish
+         action         "3"
        +manual>
-         cmd                  press-key
-         key                   "3"
+         cmd            press-key
+         key            "3"
    )
 
    (p turnL
       =goal>
          ISA                  turn
+         state                activate
          xRelativePosition    -1
-         xRelativePosition    =deviation
+     ?manual>
+         state          free
    ==>
       =goal>
-         state                nil
+         isa            check-state
+         state          finish
+         action         "4"
        +manual>
-         cmd                  press-key
-         key                   "3"
+         cmd            press-key
+         key            "4"
    )
    
    ;;;;;;;;;;;;;;;; Take info ;;;;;;;;;;;;
