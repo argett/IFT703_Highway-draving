@@ -66,8 +66,6 @@
 
          (let ((choix-model (show-model-highway *voitures* res state))); Montre notre voiture et l'accident au modèle et enregistre la key pressée par le model
             (format t "L'action choisie par le modele est ~s ~C~C" choix-model #\return #\linefeed )
-            ;; TODO
-            ;; Quelles sont les strings a return pour choix-model ? freiner fort, freiner faible, tourner droite ou tourner gauche ?
 
             ;; 1 = frein faible, 2 = frein fort, 3 = turnR, 4 = turnL
             (format t "CPT 2 ~C~C" #\return #\linefeed )
@@ -308,6 +306,8 @@
 ;; marche pas    )
 ;; marche pas )
 
+
+
 (defmethod rpm-window-key-event-handler ((win rpm-window) key)
   (setf *model-action* (string key)))
 
@@ -323,27 +323,16 @@
 
    (chunk-type check-state state result m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse action)
    ; TODO : nom de chunktype a changer car copier coller
-   (chunk-type learned-info m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse)
+   (chunk-type learned-info result m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse t_left t_right b_soft b_hard)
    (chunk-type car id weight)
    (chunk-type position id positionX positionY)
    (chunk-type speed id vitesse)
 
-
    (chunk-type turn xRelativePosition)
-   (chunk-type brake power) ; technique 1
-   (chunk-type changeSpeed old new) ; ou rechnique 2
-   (chunk-type otherCar relativeSpeed)
+   (chunk-type brake power)
 
 
-   (chunk-type count-speed first second)
 
-   ;; Addition
-   ;; sera utile pour calculer le nombre de voitures autour du conducteur
-   (chunk-type add-order low high)
-   (chunk-type add arg1 arg2 sum count)
-   ;; Soustraction
-   (chunk-type rem-order over under)
-   (chunk-type substract arg1 arg2 res)
 
    ;(declare-buffer-usage goal check-state :all )
 
@@ -351,6 +340,7 @@
 
    (define-chunks 
       ;; les differents states du goal
+      (save_model_weight isa chunk) 
       (save_model_pos   isa chunk)
       (save_model_speed isa chunk)
       (save_acc_pos     isa chunk)
@@ -360,28 +350,14 @@
       (remembering      isa chunk) 
       (begin-model      isa chunk)
       (choice           isa chunk) 
-      
-
-      ;(retrieving_2layers isa chunk) 
-      ;(retrieving_2layers_2 isa chunk)
-      ;(retrieving_2layers_3 isa chunk) 
-      ;(comparing_weight isa chunk) 
-      ;(comparing2 isa chunk)    
+      (applyAction      isa chunk) 
    )
 
    (add-dm
-      ;; exemple d'une voiture
-      ;(voiture isa car id 0 weight "w")
-      ;(voitureP isa position id 0 positionX "x" positionY "y")
-      ;(voitureS isa speed id 0 vitesse "s")
-;
-      ;;; exemple d'une voiture accidenté pour le scénario de base
-      ;(camion isa car id 1 weight nil)
-      ;(camionP isa position id 1 positionX "x" positionY "y")
-      ;(camionS isa speed id 1 vitesse "s")
+      ;;Les voitures sont générées par le code LISP
 
       (brakeSoft isa brake power 1)
-      (brakeHard isa brake power 3)
+      (brakeHard isa brake power 2)
 
       (turnR isa turn xRelativePosition 1) 
       (turnL isa turn xRelativePosition -1)
@@ -416,9 +392,9 @@
    ;; ------------------------------ Add productions here ------------------------------
         
 
-   ;; --------------- Apprentissage et essais de rememoration  ---------------
-   ;; une petite explication simple et précise
-   ;; ------------------------------------------------------------------------
+   ;; -------------------- Première procédure  --------------------
+   ;; Se lance au tout début afin d'initialiser les chunks
+   ;; -------------------------------------------------------------
 
 
 
@@ -463,7 +439,7 @@
          weight         =a
       -imaginal> 
       =goal>
-         state save_model_pos
+         state          save_model_pos
    )
 
    (p set_model_1
@@ -554,7 +530,7 @@
       ==>
       -imaginal> ;; Pour sauvegarder l'imaginal de set_accdt_2
       +retrieval> 
-         isa            check-state
+         isa            learned-info
          m_weight       =a
          m_positionX    =b
          m_positionY    =c
@@ -567,10 +543,10 @@
    )
 
 
-   ;; --------------- Enregistrement des donnees  ---------------
-   ;; 
-   ;; 
-   ;; -----------------------------------------------------------
+   ;; ----------------- Enregistrement des donnees  -----------------
+   ;; On essaie de se souvenir si la situation s'est déjà présenté
+   ;; Sinon, on tente de freiner, touner ou freiner fort
+   ;; ---------------------------------------------------------------
 
 
 
@@ -579,16 +555,96 @@
          isa            check-state
          state          remembering
       =retrieval>
-         isa            check-state
-         action         =act
+         isa            learned-info
+         result         =res
+         t_left         =tl
+         t_rigt         =tr
+         b_soft         =bs
+         b_hard         =bh
+;; innutile je pense
+         ;m_weight       =a
+         ;m_positionX    =b
+         ;m_positionY    =c
+         ;m_vitesse      =d
+         ;a_positionX    =x
+         ;a_positionY    =y
+         ;a_vitesse      =z
       ==>
       =goal>
-         state          choice
-         result         =act
-      +manual>
-         cmd            press-key
-         key            =act
+         isa            learned-info
+         state          applyAction
+         result         =res
+         t_left         =tl
+         t_rigt         =tr
+         b_soft         =bs
+         b_hard         =bh
+;; innutile je pense
+         ;m_weight       =a
+         ;m_positionX    =b
+         ;m_positionY    =c
+         ;m_vitesse      =d
+         ;a_positionX    =x
+         ;a_positionY    =y
+         ;a_vitesse      =z
    )
+
+   (p win-b-soft
+      =goal>
+         isa            learned-info
+         state          applyAction
+        -b_soft         lose
+      ==>
+      =goal>
+         isa            brake
+         power          1
+   )
+
+   (p win-b-hard
+      =goal>
+         isa            learned-info
+         state          applyAction
+        -b_hard         lose
+      ==>
+      =goal>
+         isa            brake
+         power          2
+   )
+
+   (p win-t-right
+      =goal>
+         isa            learned-info
+         state          applyAction
+        -t_right        lose
+      ==>
+      =goal>
+         isa            turnR
+         xRelativePosition 1
+   )
+
+   (p win-t-left
+      =goal>
+         isa            learned-info
+         state          applyAction
+        -t_left         lose
+      ==>
+      =goal>
+         isa            turnL
+         xRelativePosition -1
+   )
+
+   ;; est-ce qu'il faut faire les 4 mêmes pour lose ? 
+
+   ;(p dont-Lose
+   ;   =goal>
+   ;      isa            check-state
+   ;      state          applyAction
+   ;      result         lose
+   ;      action         =act
+   ;   ==>
+   ;   =goal>
+   ;      state          choice
+   ;     -result         =act ;; est ce que ça marche 
+   ;)
 
    (p doesnt-remember-organization
       =goal>
@@ -601,165 +657,72 @@
          state          begin-model
    )
 
-  (p begin
+   (p begin
       =goal>
          isa            check-state
          state          begin-model
-         ; TODO : savoir quoi prendre
       ==>
-      ;+retrieval> 
-      ;   ; TODO : savoir quoi retourner 
+      ; Quand on sait pas quoi faire on freine doucement
       =goal>
-         state          choice
-         action         "1"
-      +manual>
-         cmd            press-key
-         key            "1"
+         ISA            brake
+         power          1
 
    )
 
+   ;;;;;;;;;;;; Brakes ;;;;;;;;;;;;
+   
+   (p brakeSoft
+      =goal>
+       ISA                  brake
+       power                1
+   ==>
+      =goal>
+       state                nil
+      +manual>
+       cmd                  press-key
+       key                  "1"
+   )
+   
+   (p brakeHard
+      =goal>
+       ISA                 brake
+       power               2
+   ==>
+      =goal>
+       state               nil
+      +manual>
+       cmd                 press-key
+       key                 "2"
+   )
+
    ;;;;;;;;;;;; Turns ;;;;;;;;;;;; 
-   ;;(p turnL
-   ;;   =goal>
-   ;;      ISA                   turn
-   ;;      xRelativePosition    -1
-   ;;      xRelativePosition    =deviation
-   ;;   =retrieval>
-   ;;      ISA                   my_car
-   ;;      positionX             =x_pos_car
-   ;;==>
-   ;;   =goal>
-   ;;      ISA                   position
-   ;;      id                    =0
-   ;;   =retrieval>
-   ;;      ISA                   rem-order
-   ;;      first                 =x_pos_car 
-   ;;    +manual>
-   ;;      cmd press-key
-   ;;      key "4"
-   ;;)
-   ;;
-   ;;(p turnedLeft
-   ;;   =goal>
-   ;;      ISA                  position
-   ;;      id                   0
-   ;;      positionX            =posX
-   ;;      positionY            =posY
-   ;;   =retrieval>
-   ;;      ISA                  rem-order
-   ;;      first                posX
-   ;;      second               =finalPosX
-   ;;
-   ;;==>
-   ;;   =goal>
-   ;;      ISA                  car
-   ;;      id                   =0
-   ;;      positionX            =finalPosX
-   ;;   +imaginal>     ;; Réécriture du chunk position avec id=0
-   ;;      ISA                 position
-   ;;      id                  =0
-   ;;      positionX           =finalPosX
-   ;;      positionY           =posY
-   ;;    +manual>
-   ;;      cmd press-key
-   ;;      key "4"
-   ;;)
-   ;;
-   ;;(p turnR
-   ;;   =goal>
-   ;;      ISA                  turn
-   ;;      xRelativePosition    1
-   ;;      xRelativePosition    =deviation
-   ;;   =retrieval>
-   ;;      ISA                   my_car
-   ;;      positionX             =x_pos_car
-   ;;==>
-   ;;   =goal>
-   ;;      ISA                   position
-   ;;      id                    =0
-   ;;   =retrieval>
-   ;;      ISA                   rem-order
-   ;;      first                 =x_pos_car 
-   ;;    +manual>
-   ;;      cmd press-key
-   ;;      key "3"
-   ;;)
-   ;;
-   ;;(p turnedRight
-   ;;   =goal>
-   ;;      ISA                  position
-   ;;      id                   0
-   ;;      positionX            =posX
-   ;;      positionY            =posY
-   ;;   =retrieval>
-   ;;      ISA                  rem-order
-   ;;      first                posX
-   ;;      second               =finalPosX
-   ;;
-   ;;==>
-   ;;   =goal>
-   ;;      ISA                  car
-   ;;      id                   =0
-   ;;      positionX            =finalPosX
-   ;;   +imaginal>     ;; On attendant de savoir comment réécrire par dessus le chunk position avec id=0
-   ;;      ISA                 position
-   ;;      id                  =0
-   ;;      positionX           =finalPosX
-   ;;      positionY           =posY
-   ;;    +manual>
-   ;;      cmd press-key
-   ;;      key "3"
-   ;;)
-   ;;
-   ;;;;;;;;;;;;;; Brakes ;;;;;;;;;;;;
-   ;;
-   ;;;; A changer 
-   ;;
-   ;;(p brakeSoft
-   ;;   =goal>
-   ;;    ISA                   brake
-   ;;    power                 1
-   ;;    power                 =puissance_de_freinage
-   ;;  =retrieval>
-   ;;    ISA                   speed
-   ;;    id                    0
-   ;;    vitesse               =s
-   ;;==>
-   ;;    =goal>
-   ;;       ;; ???
-   ;;     =retrieval>
-   ;;       ISA speed
-   ;;       id                     0
-   ;;       vitesse                =s-puissance_de_freinage
-   ;;    +manual>
-   ;;       cmd press-key
-   ;;       key "1"
-   ;;)
-   ;;
-   ;;;; A changer 
-   ;;
-   ;;(p brakeHard
-   ;;   =goal>
-   ;;    ISA       brake
-   ;;    power     3
-   ;;    power     =puissance_de_freinage
-   ;;  =retrieval>
-   ;;    ISA       speed
-   ;;    id        0
-   ;;    vitesse   =s
-   ;;==>
-   ;;    =goal>
-   ;;       ; ???
-   ;;    =retrieval>
-   ;;       ISA speed
-   ;;       id        0
-   ;;       vitesse   =s-puissance_de_freinage
-   ;;    +manual>
-   ;;       cmd press-key
-   ;;       key "2"
-   ;;)
-   ;;
-   ;;;;;;;;;;;;;; Take info ;;;;;;;;;;;;
+   
+   (p turnR
+      =goal>
+         ISA                  turn
+         xRelativePosition    1
+   ==>
+      =goal>
+         state                nil
+       +manual>
+         cmd                  press-key
+         key                   "3"
+   )
+
+   (p turnL
+      =goal>
+         ISA                  turn
+         xRelativePosition    -1
+         xRelativePosition    =deviation
+   ==>
+      =goal>
+         state                nil
+       +manual>
+         cmd                  press-key
+         key                   "3"
+   )
+   
+   ;;;;;;;;;;;;;;;; Take info ;;;;;;;;;;;;
    ;;
    ;;(p lookLeft
    ;;   =goal>
@@ -778,74 +741,6 @@
    ;;    a         a
    ;;)
    ;;
-   ;;
-   ;;;;;;;;;;;;;; Addition ;;;;;;;;;;;;
-   ;;
-   (P initialize-addition
-      =goal>
-         ISA         add
-         arg1        =num1
-         arg2        =num2
-         sum         nil
-   ==>
-      =goal>
-         ISA         add
-         sum         =num1
-         count       0
-      +retrieval>
-         ISA         add-order
-         low         =num1
-   )
-
-   (P terminate-addition
-      =goal>
-         ISA         add
-         count       =num
-         arg2        =num
-         sum         =answer
-   ==>
-      =goal>
-         ISA         add
-         count       nil
-      !output!       =answer
-   )
-
-   (P increment-count
-      =goal>
-         ISA         add
-         sum         =sum
-         count       =count
-      =retrieval>
-         ISA         add-order
-         low         =count
-         high        =newcount
-   ==>
-      =goal>
-         ISA         add
-         count       =newcount
-      +retrieval>
-         ISA         add-order
-         low         =sum
-   )
-
-   (P increment-sum
-      =goal>
-         ISA         add
-         sum         =sum
-         count       =count
-      - arg2        =count
-      =retrieval>
-         ISA         add-order
-         low       =sum
-         high      =newsum
-   ==>
-      =goal>
-         ISA         add
-         sum         =newsum
-      +retrieval>
-         ISA        add-order
-         low        =count
-   )
    ;(goal-focus check-state)
 
 )
