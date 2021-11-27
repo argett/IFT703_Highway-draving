@@ -321,11 +321,12 @@
    ;; ------------------------------ Add Chunks here ------------------------------
 
    (define-chunks 
-      ;; state du goal je crois
-      (save_model_pos isa chunk)
+      ;; les differents states du goal
+      (save_model_pos   isa chunk)
       (save_model_speed isa chunk)
-      (save_acc_pos isa chunk)
-      (save_acc_speed isa chunk)
+      (save_acc_pos     isa chunk)
+      (save_acc_speed   isa chunk)
+      (end_set          isa chunk)
 
       (remembering isa chunk) 
       (begin-model isa chunk)
@@ -468,7 +469,7 @@
          vitesse        =d
       -imaginal> 
       =goal>
-         state save_acc_pos
+         state          save_acc_pos
    )
 
    (p set_accdt_1
@@ -487,7 +488,7 @@
          positionY      =y
       -imaginal> 
       =goal>
-         state save_acc_speed
+         state          save_acc_speed
    )
 
    (p set_accdt_2
@@ -504,7 +505,35 @@
          vitesse        =z
       -imaginal> 
       =goal>
-         state remembering
+         state          end_set
+   )
+
+   (p end_set_model_accdt
+      =goal>
+         isa            check-state
+         state          end_set
+         m_weight       =a
+         m_positionX    =b
+         m_positionY    =c
+         m_vitesse      =d
+         a_positionX    =x
+         a_positionY    =y
+         a_vitesse      =z
+      ?imaginal>
+         state          free
+      ==>
+      -imaginal> ;; Pour sauvegarder l'imaginal de set_accdt_2
+      +retrieval> 
+         isa            learned-info
+         m_weight       =a
+         m_positionX    =b
+         m_positionY    =c
+         m_vitesse      =d
+         a_positionX    =x
+         a_positionY    =y
+         a_vitesse      =z
+      =goal>
+         state          remembering
    )
 
 
