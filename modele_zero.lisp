@@ -64,10 +64,8 @@
          (setf (slot-value (cadr *voitures*) 'positionX) 0)
          (setf (slot-value (cadr *voitures*) 'positionY) 10)
 
-         (format t "CPT 1 ~C~C" #\return #\linefeed )
-
          (let ((choix-model (show-model-highway *voitures* res state))); Montre notre voiture et l'accident au modèle et enregistre la key pressée par le model
-            (format t "Choix = ~s ~C~C" choix-model #\return #\linefeed )
+            (format t "L'action choisie par le modele est ~s ~C~C" choix-model #\return #\linefeed )
             ;; TODO
             ;; Quelles sont les strings a return pour choix-model ? freiner fort, freiner faible, tourner droite ou tourner gauche ?
 
@@ -284,6 +282,37 @@
    )
 )
 
+(defun respond-to-keypress (model key)
+   (if model
+      (setf *model-action* key)
+      ;;(setf *human-action* key)
+   )
+)
+
+;; marche pas (defvar *key-monitor-installed* nil)
+;; marche pas (defun add-key-monitor ()
+;; marche pas   (unless *key-monitor-installed*
+;; marche pas     (add-act-r-command "highway-key-press" 'respond-to-keypress 
+;; marche pas                        "highway task key output monitor")
+;; marche pas     (monitor-act-r-command "output-key" "highway-key-press")
+;; marche pas     (setf *key-monitor-installed* t)
+;; marche pas    )
+;; marche pas )
+
+;; marche pas (defmethod rpm-window-key-event-handler ((win rpm-window) key)
+;; marche pas   (if (eq win (current-device))
+;; marche pas       (setf *model-action* (string key))
+;; marche pas     (unless *human-action*
+;; marche pas       (setf *human-action* (string key))
+;; marche pas     )
+;; marche pas    )
+;; marche pas )
+
+(defmethod rpm-window-key-event-handler ((win rpm-window) key)
+  (setf *model-action* (string key)))
+
+
+
 (define-model conductor
     
    ;;(sgp :v nil :esc t :lf 0.4 :bll 0.5 :ans 0.5 :rt 0 :ncnar nil)
@@ -292,7 +321,7 @@
 
    ;; ------------------------------ Add Chunk-types here ------------------------------
 
-   (chunk-type check-state state result m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse)
+   (chunk-type check-state state result m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse action)
    ; TODO : nom de chunktype a changer car copier coller
    (chunk-type learned-info m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse)
    (chunk-type car id weight)
@@ -328,10 +357,11 @@
       (save_acc_speed   isa chunk)
       (end_set          isa chunk)
 
-      (remembering isa chunk) 
-      (begin-model isa chunk)
-      ;(finish isa chunk) 
-      ;(retrieving isa chunk) 
+      (remembering      isa chunk) 
+      (begin-model      isa chunk)
+      (choice           isa chunk) 
+      
+
       ;(retrieving_2layers isa chunk) 
       ;(retrieving_2layers_2 isa chunk)
       ;(retrieving_2layers_3 isa chunk) 
@@ -524,7 +554,7 @@
       ==>
       -imaginal> ;; Pour sauvegarder l'imaginal de set_accdt_2
       +retrieval> 
-         isa            learned-info
+         isa            check-state
          m_weight       =a
          m_positionX    =b
          m_positionY    =c
@@ -543,51 +573,49 @@
    ;; -----------------------------------------------------------
 
 
+
    (p remember-organization
       =goal>
-         isa check-state
-         state remembering
+         isa            check-state
+         state          remembering
       =retrieval>
-         ;; TODO : A CHANGER
-         isa learned-info
-         first-c =val1
-         second-c =val2
+         isa            check-state
+         action         =act
       ==>
       =goal>
-         ;; TODO : A CHANGER
-         state finish
-         first-c =val1
-         second-c =val2
-         result "win"
+         state          choice
+         result         =act
+      +manual>
+         cmd            press-key
+         key            =act
    )
 
    (p doesnt-remember-organization
       =goal>
-         isa check-state
-         state remembering
+         isa            check-state
+         state          remembering
       ?retrieval>
-         buffer  failure
+         buffer         failure
       ==>
       =goal>
-         state begin-model
+         state          begin-model
    )
 
   (p begin
       =goal>
-         state begin-model
+         isa            check-state
+         state          begin-model
          ; TODO : savoir quoi prendre
-         c1 =a
-         c2 =b
-         c3 =c
       ==>
-      +retrieval> 
-         ; TODO : savoir quoi retourner 
-         isa first1
-         v1 =a
-         v2 =b
-         v3 =c
+      ;+retrieval> 
+      ;   ; TODO : savoir quoi retourner 
       =goal>
-         state retrieving
+         state          choice
+         action         "1"
+      +manual>
+         cmd            press-key
+         key            "1"
+
    )
 
    ;;;;;;;;;;;; Turns ;;;;;;;;;;;; 
