@@ -116,13 +116,28 @@
                ;   (setf (slot-value (car *voitures*) 'vitesse) 1)
                ;)  
 
+               ;
+               ;;(if (> (slot-value (car *voitures*) 'position)  1)
+               ;;   (progn
+               ;;      (setf (slot-value (car *voitures*) 'position) 1)
+               ;;      (setf res "crash") 
+               ;;      (setf not-win t)
+               ;;   )
+               ;;) 
+               ;;(if (< (slot-value (car *voitures*) 'position)  -1)
+               ;;   (progn
+               ;;      (setf (slot-value (car *voitures*) 'position) -1)
+               ;;      (setf res "crash") 
+               ;;      (setf not-win t)
+               ;;   )
+               ;;) 
+
                ;; on fait avancer la voiture selon sa vitesse
                (setf (slot-value (car *voitures*) 'positionY) (+ (slot-value (car *voitures*) 'positionY) (slot-value (car *voitures*) 'vitesse)))
 
-
                ;; Les deux voitures sont sur la même case
                (if (and (= (slot-value (car *voitures*) 'positionX)  (slot-value (cadr *voitures*) 'positionX))  
-                        (= (slot-value (car *voitures*) 'positionY)  (slot-value (cadr *voitures*) 'positionY)))
+                        (>= (slot-value (car *voitures*) 'positionY)  (slot-value (cadr *voitures*) 'positionY)))
                   (progn
                      (setf res "crash") 
                      (setf not-win t)
@@ -132,7 +147,7 @@
                      (setf res "esquive") 
                      (setf not-win nil)
                      (format t "Le modele a esquive ~C~C" #\return #\linefeed )
-                  )               
+                  )
                )
 
                ;; si 1 tour, il faut juste qu'elle ne crash pas
@@ -174,6 +189,7 @@
          )
       )
       (format t "On a win ~d fois sur ~d essais" nbWin n-times)
+      (format t "~C~C ~C~C ~C~C" #\return #\linefeed #\return #\linefeed #\return #\linefeed)
    )
    
    ;(when need-to-remove
@@ -189,14 +205,53 @@
    
 
    (setf (slot-value *model* 'poids) 1) ; poids pas aléatoire pour l'instant 
-   (setf (slot-value *model* 'vitesse) 3)
+   (setf (slot-value *model* 'vitesse) (+ (act-r-random 2) 3)) ; vitesse entre 3 et 4 
    (setf (slot-value *model* 'positionX) 0) ; voie du milieu
-   (setf (slot-value *model* 'positionY) 0) ; en bas de la route
+   (setf (slot-value *model* 'positionY) (act-r-random 1)) ; en bas de la route
    
    (setf (slot-value *accident* 'poids) 1) ; poids pas aléatoire pour l'instant 
    (setf (slot-value *accident* 'vitesse) 0)
    (setf (slot-value *accident* 'positionX) 0) ; voie du milieu
    (setf (slot-value *accident* 'positionY) 2) ; en haut de la route
+
+
+
+   (format t "~C~C ~C~C|"  #\return #\linefeed #\return #\linefeed )
+   (if (= (slot-value *model* 'positionX) -1)
+      (format t " M ")
+      (format t "   ")
+   )
+   (format t "|")
+   (if (= (slot-value *model* 'positionX) 0)
+      (format t " M ")
+      (format t "   ")
+   )
+   (format t "|")
+   (if (= (slot-value *model* 'positionX) 1)
+      (format t " M ")
+      (format t "   ")
+   )
+   (format t "|    avec position Y = ~d et vitesse = ~d ~C~C ~C~C" (slot-value *model* 'positionY) (slot-value *model* 'vitesse) #\return #\linefeed #\return #\linefeed)
+
+   (format t "|")
+   (if (= (slot-value *accident* 'positionX) -1)
+      (format t " A ")
+      (format t "   ")
+   )
+   (format t "|")
+   (if (= (slot-value *accident* 'positionX) 0)
+      (format t " A ")
+      (format t "   ")
+   )
+   (format t "|")
+   (if (= (slot-value *accident* 'positionX) 1)
+      (format t " A ")
+      (format t "   ")
+   )
+   (format t "|    avec position Y = ~d ~C~C ~C~C" (slot-value *accident* 'positionY) #\return #\linefeed #\return #\linefeed)
+
+
+
 
    (setf voitures-list (list *model* *accident*)) ; ajout des voitures dans une listere))
 
@@ -328,8 +383,8 @@
 
 (define-model conductor
     
-   ;;(sgp :v nil :esc t :lf 0.4 :bll 0.5 :ans 0.5 :rt 0 :ncnar nil)
-   (sgp :esc t :lf .05)
+   (sgp :v t :esc t :lf 0.4 :bll 0.5 :ans 0.5 :rt 0 :ncnar nil)
+   ;;(sgp :esc t :lf .05)
    (install-device (open-exp-window "" :visible nil))
 
    ;; ------------------------------ Add Chunk-types here ------------------------------
@@ -622,6 +677,11 @@
          action         =act
    )
 
+
+
+;;---------------------------------------------
+
+
    (p remember-lose-b-soft
       =goal>
          state          choseAction
@@ -635,7 +695,7 @@
 
    (p remember-lose-b-hard
       =goal>
-         state          applyAction
+         state          choseAction
          result        "crash"
          action         "2"
       ==>
@@ -646,7 +706,7 @@
 
    (p remember-lose-t-rigth
       =goal>
-         state          applyAction
+         state          choseAction
          result        "crash"
          action         "3"
       ==>
