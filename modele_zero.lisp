@@ -47,25 +47,27 @@
 
       (setf nbWin 0)
       (dotimes (i n-times)
+         (format t "~C~C --- Essai numero ~d --- ~C~C" i #\return #\linefeed )
+         (setf *voitures* (create-voitures)); Creation de notre voiture et de la voiture accident
+         (setf m_oldSped (slot-value (car *voitures*) 'vitesse)) 
+         (setf m_oldPosX (slot-value (car *voitures*) 'positionX)) 
+         (setf m_oldPosY (slot-value (car *voitures*) 'positionY)) 
+
          (setf tour 1)
          (setf not-win t) ; t = true, nil = false
-         (setf res nil)
-         (setf state nil)
 
          ;; TODO : creation d'autres usagers = (setf *usagers* (create-usagers)); Creation des voitures des autres usagers si complexification
 
-         (while not-win ; appeler le modèle tant qu'il n'a pas win ou pas crash
-            (format t "    On est dans le boucle ~d fois ~C~C" tour #\return #\linefeed )
-         
-            (setf *voitures* (create-voitures)); Creation de notre voiture et de la voiture accident
+         (while not-win ; appeler le modèle tant qu'il n'a pas win ou pas crash         
+            (format t "    On est dans la boucle ~d fois ~C~C" tour #\return #\linefeed )
+            (setf res nil)
+            (setf state nil)
 
-            ;;;; un genre de reset pour le modele je crois
-            ;;;; 1er élément de la liste, donc notre modele
-            ;;(setf (slot-value (car *voitures*) 'positionX) 0) 
-            ;;(setf (slot-value (car *voitures*) 'positionY) 0) 
-            ;;;; 2nd élément de la liste, donc la voiture accident
-            ;;(setf (slot-value (cadr *voitures*) 'positionX) 0)
-            ;;(setf (slot-value (cadr *voitures*) 'positionY) 10)
+            ;; On reset la position des modele dans la cas où on a perdu avant
+            ;; 1er élément de la liste, donc notre modele
+            (setf (slot-value (car *voitures*) 'vitesse) m_oldSped) 
+            (setf (slot-value (car *voitures*) 'positionX) m_oldPosX) 
+            (setf (slot-value (car *voitures*) 'positionY) m_oldPosY) 
 
             (let ((choix-model (show-model-highway *voitures* res state))); Montre notre voiture et l'accident au modèle et enregistre la key pressée par le model
                (setf tour (+ tour 1))
@@ -221,17 +223,13 @@
 ;)
 
 (defun show-model-highway (voitures &optional res state)
-   (format t "Goal buffer = ~s ~C~C" (buffer-read 'goal) #\return #\linefeed )
+   (format t "Goal buffer = ~s ; res = ~s ; state = ~s ~C~C" (buffer-read 'goal) res state #\return #\linefeed )
    (if (buffer-read 'goal) ;; s'il y a un chunk dans le buffers goal 
-      (mod-focus-fct `(state        ,res
-                        result      ,state
-                        m_weight    ,(slot-value (car voitures) 'poids) 
-                        m_positionX ,(slot-value (car voitures) 'positionX) 
+      (mod-focus-fct `(m_positionX ,(slot-value (car voitures) 'positionX) 
                         m_positionY ,(slot-value (car voitures) 'positionY) 
                         m_vitesse   ,(slot-value (car voitures) 'vitesse) 
-                        a_positionX ,(slot-value (cadr voitures) 'positionX) 
-                        a_positionY ,(slot-value (cadr voitures) 'positionY) 
-                        a_vitesse   ,(slot-value (cadr voitures) 'vitesse) 
+                        result      ,nil ;; pourquoi mettre res ici ?
+                        state       re-start ;; il faut reset au moins les positions et la vitesse
                      ) 
       )
       (goal-focus-fct (car (define-chunks-fct ; crée un nouveau chunk et le met dans le goal
@@ -357,6 +355,7 @@
       (save_model_speed isa chunk)
       (save_acc_pos     isa chunk)
       (save_acc_speed   isa chunk)
+      (re-start-suite   isa chunk)
       (end_set          isa chunk)
 
       (remembering      isa chunk) 
@@ -390,8 +389,6 @@
    ;; -------------------- Première procédure  --------------------
    ;; Se lance au tout début afin d'initialiser les chunks
    ;; -------------------------------------------------------------
-
-
 
    (p start
       =goal>
@@ -509,7 +506,58 @@
          state          end_set
    )
 
-   (p end_set_model_accdt
+   ;; ------------------ Modification des donnees  ------------------
+   ;; S'il existe deja un chunck avec id = 0, on le modifie
+   ;; Au lieu d'en recreer un nouveau avec le meme id
+   ;; ---------------------------------------------------------------
+
+   (p re_start
+      =goal>
+         state          "re-start"
+         positionX      =posX
+         positionY      =posY
+         vitesse        =v
+         ;; on veut chopper
+         isa            position
+         id             0
+
+      ?retrieval>
+         state          free
+      ==>
+      +retrieval> 
+         ;; pour modifier
+         isa            position
+         positionX      =posX
+         positionY      =posY
+      =goal>
+         state          re-start-suite
+         vitesse        =v
+   )
+
+   (p re_start
+         =goal>
+            state          re-start-suite
+            vitesse        =v
+            ;; on veut chopper
+            isa            speed
+            id             0
+         ?retrieval>
+            state          free
+         ==>
+         +retrieval> 
+            ;; pour modifier
+            isa            speed
+            vitesse        =v
+         =goal>
+            state          end_set
+      )
+
+   ;; ----------------- Enregistrement des donnees  -----------------
+   ;; On essaie de se souvenir si la situation s'est déjà présenté
+   ;; Sinon, on tente de freiner, touner ou freiner fort
+   ;; ---------------------------------------------------------------
+
+   (p try_load
       =goal>
          isa            check-state
          state          end_set
@@ -537,14 +585,6 @@
          state          remembering
    )
 
-
-   ;; ----------------- Enregistrement des donnees  -----------------
-   ;; On essaie de se souvenir si la situation s'est déjà présenté
-   ;; Sinon, on tente de freiner, touner ou freiner fort
-   ;; ---------------------------------------------------------------
-
-
-
    (p remember-organization
       =goal>
          isa            check-state
@@ -556,7 +596,7 @@
          t_right        =tr
          b_soft         =bs
          b_hard         =bh
-;; innutile je pense
+
          ;m_weight       =a
          ;m_positionX    =b
          ;m_positionY    =c
@@ -845,9 +885,6 @@
          a_positionY    =e
          a_vitesse      =f
          b_hard         t
-       - b_soft         nil
-       - t_left         nil
-       - t_right        nil
       -imaginal>
       =goal>
          state          finish
