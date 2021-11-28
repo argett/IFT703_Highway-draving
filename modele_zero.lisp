@@ -190,7 +190,7 @@
    (setf (slot-value *accident* 'poids) 1) ; poids pas aléatoire pour l'instant 
    (setf (slot-value *accident* 'vitesse) 0)
    (setf (slot-value *accident* 'positionX) 0) ; voie du milieu
-   (setf (slot-value *accident* 'positionY) 2) ; en haut de la route
+   (setf (slot-value *accident* 'positionY) 5) ; en haut de la route
 
    (setf voitures-list (list *model* *accident*)) ; ajout des voitures dans une listere))
 
@@ -758,6 +758,10 @@
    ;;
    ;(goal-focus check-state)
 
+   
+   ;;;;;;;;;;;;;;;;;;;; Sauvegardes ;;;;;;;;;;;;;;;;;;;;
+
+
    (p save-win
       =goal>
          result         "esquive"
@@ -810,9 +814,6 @@
          a_positionY    =e
          a_vitesse      =f
          b_soft         t
-       - b_hard         nil
-       - t_left         nil
-       - t_right        nil
       -imaginal>
       =goal>
          state          finish
