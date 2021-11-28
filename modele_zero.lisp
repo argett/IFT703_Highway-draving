@@ -1,6 +1,8 @@
 (clear-all)
 
 (defvar *model-action* ) ; La variable que le model devra remplir (liste de valise)
+(defvar voitures-list nil)
+
 ;; Classe voiture
 (defclass voiture()
    (poids
@@ -40,9 +42,9 @@
 )
 
 ;; Fonction pour placer les voitures sur les voies
-(defun place_elements (n-times &optional (draw-highway nil))
-   
+(defun place_elements (n-times &optional (draw-highway nil))   
    (let (scores (need-to-remove (add-key-monitor)))
+
       (setf nbWin 0)
       (dotimes (i n-times)
          (setf tour 1)
@@ -50,112 +52,114 @@
          (setf res nil)
          (setf state nil)
 
-         (format t "Avant voiture ~C~C" #\return #\linefeed )
-         (setf *voitures* (create-voitures)); Creation de notre voiture et de la voiture accident
          ;; TODO : creation d'autres usagers = (setf *usagers* (create-usagers)); Creation des voitures des autres usagers si complexification
-
-         
-         ;(let (window (open-exp-window "UNE FENETRE")))
 
          (while not-win ; appeler le modèle tant qu'il n'a pas win ou pas crash
             (format t "    On est dans le boucle ~d fois ~C~C" tour #\return #\linefeed )
          
-            ;; un genre de reset pour le modele je crois
-            ;; 1er élément de la liste je crois, donc notre modele
-            (setf (slot-value (car *voitures*) 'positionX) 0) 
-            (setf (slot-value (car *voitures*) 'positionY) 0) 
-            ;; 2nd élément de la liste je cris, donc la voiture accident
-            (setf (slot-value (cadr *voitures*) 'positionX) 0)
-            (setf (slot-value (cadr *voitures*) 'positionY) 10)
+            (setf *voitures* (create-voitures)); Creation de notre voiture et de la voiture accident
+
+            ;;;; un genre de reset pour le modele je crois
+            ;;;; 1er élément de la liste, donc notre modele
+            ;;(setf (slot-value (car *voitures*) 'positionX) 0) 
+            ;;(setf (slot-value (car *voitures*) 'positionY) 0) 
+            ;;;; 2nd élément de la liste, donc la voiture accident
+            ;;(setf (slot-value (cadr *voitures*) 'positionX) 0)
+            ;;(setf (slot-value (cadr *voitures*) 'positionY) 10)
 
             (let ((choix-model (show-model-highway *voitures* res state))); Montre notre voiture et l'accident au modèle et enregistre la key pressée par le model
-               (format t "L'action choisie par le modele est ~s ~C~C" choix-model #\return #\linefeed )
+               (setf tour (+ tour 1))
 
-               ;; 1 = frein faible, 2 = frein fort, 3 = turnR, 4 = turnL
-               (format t "CPT POST LET CHOIX MODEL ~C~C" #\return #\linefeed )
-               (when (string-equal "1" choix-model) (progn
-                  (setf tour (+ tour 1)) ;; incrémente le nombre de tour
-                  (setf (slot-value (car *voitures*) 'vitesse) (- (slot-value (car *voitures*) 'vitesse) 1)) ;; "moyen ? faible ?")  int ou string ?
-                  (setf state "Un state à choisir"))
-               ) ; TODO
+               ;; 1 = frein faible, 2 = frein fort, 3 = tourne a droite, 4 = tourne a gauche
+               (if (string-equal "1" choix-model) 
+                  (progn
+                     (setf (slot-value (car *voitures*) 'vitesse) (- (slot-value (car *voitures*) 'vitesse) 1))
+                     (setf state "brake_soft")
+                     (format t "Le modele freine doucement v= ~s ~C~C" (slot-value (car *voitures*) 'vitesse) #\return #\linefeed )
+                  )
+               )
 
-               (when (string-equal "2" choix-model) (progn
-                  (setf tour (+ tour 1)) ;; incrémente le nombre de tour
-                  (setf (slot-value (car *voitures*) 'vitesse) (- (slot-value (car *voitures*) 'vitesse) 2)) ;; "moyen ? faible ?")  int ou string ?
-                  (setf state "Un state à choisir"))
-               ) ; TODO
+               (if (string-equal "2" choix-model) 
+                  (progn
+                     (setf (slot-value (car *voitures*) 'vitesse) (- (slot-value (car *voitures*) 'vitesse) 2))
+                     (setf state "brake_hard")
+                     (format t "Le modele freine fort v= ~s ~C~C" (slot-value (car *voitures*) 'vitesse) #\return #\linefeed )
+                  )
+               )
 
-               (when (string-equal "3" choix-model) (progn
-                  (setf tour (+ tour 1)) ;; incrémente le nombre de tour?
-                  (setf (slot-value (car *voitures*) 'positionX) (+ (slot-value (car *voitures*) 'positionX) 1))
-                  (setf state "Un state à choisir"))
-               ) ; TODO
+               (if (string-equal "3" choix-model) 
+                  (progn
+                     (setf (slot-value (car *voitures*) 'positionX) (+ (slot-value (car *voitures*) 'positionX) 1))
+                     (setf state "turn_right")
+                     (format t "Le modele tourne a droite ~C~C" #\return #\linefeed )
+                  )
+               )
 
-               (when (string-equal "4" choix-model) (progn
-                  (setf tour (+ tour 1)) ;; incrémente le nombre de tour
-                  (setf (slot-value (car *voitures*) 'positionX) (- (slot-value (car *voitures*) 'positionX) 1))
-                  (setf state "Un state à choisir"))
-               ) ; TODO
+               (if (string-equal "4" choix-model) 
+                  (progn
+                     (setf (slot-value (car *voitures*) 'positionX) (- (slot-value (car *voitures*) 'positionX) 1))
+                     (setf state "turn_left")
+                     (format t "Le modele tourne a gauche ~C~C" #\return #\linefeed )
+                  )
+               )
 
-               (format t "CPT 3 ~C~C" #\return #\linefeed )
-               ;; check si la vitesse ne passe pas en dessous de un
-               (if (< (slot-value (car *voitures*) 'vitesse)  1)
-                  (setf (slot-value (car *voitures*) 'vitesse) 1)
-               )  
-               ;; TODO : inverse
-                  
-               (format t "CPT 4 ~C~C" #\return #\linefeed )
-               (setf res "on verra") ;; changer les valeurs dans les if 
+               ; pas besoin de check si un seul tour
+               ;;; check si la vitesse ne passe pas en dessous de 1
+               ;(if (< (slot-value (car *voitures*) 'vitesse)  1)
+               ;   (setf (slot-value (car *voitures*) 'vitesse) 1)
+               ;)  
+
+               ;; on fait avancer la voiture selon sa vitesse
+               (format t "~s + ~s =  ~C~C" (slot-value (car *voitures*) 'positionY) (slot-value (car *voitures*) 'vitesse) #\return #\linefeed )
+               (setf (slot-value (car *voitures*) 'positionY) (+ (slot-value (car *voitures*) 'positionY) (slot-value (car *voitures*) 'vitesse)))
+               (format t "= ~s  ~C~C" (slot-value (car *voitures*) 'positionY) #\return #\linefeed )
 
                ;; Les deux voitures sont sur la même case
-               (if (= (slot-value (car *voitures*) 'positionX)  (slot-value (cadr *voitures*) 'positionX))  
-                  (if (= (slot-value (car *voitures*) 'positionY)  (slot-value (cadr *voitures*) 'positionY))  
+               (if (and (= (slot-value (car *voitures*) 'positionX)  (slot-value (cadr *voitures*) 'positionX))  
+                        (= (slot-value (car *voitures*) 'positionY)  (slot-value (cadr *voitures*) 'positionY)))
+                  (progn
                      (setf res "crash") 
-
-                     ;; TODO : code a priori qu'on doit faire
-                     ;(setf state " - un state a definir - ")
-                     ;(setf not-win nil)
-                     ;(show-model-result res state)
-
-                     ;; pourquoi ce unless 0 ? eut être à enlever
-                     (progn (setf not-win nil)
-                        (unless (string-equal choix-model "0")(progn 
-                           (setf state "final")
-                           (show-model-result res state))
-                        )
-                     )
+                     (setf not-win t)
+                     (format t "Le modele a crash ~C~C" #\return #\linefeed )
                   )
+                  (progn
+                     (setf res "esquive") 
+                     (setf not-win nil)
+                     (format t "Le modele a esquive ~C~C" #\return #\linefeed )
+                  )               
                )
 
-               ;; La voiture a dépasse l'accident, on gagne
-               (if (> (slot-value (car *voitures*) 'positionX)  (slot-value (cadr *voitures*) 'positionX))    
-                  (setf res "win") ;; Les deux voitures sont sur la même case
-
-                  ;; TODO : code a priori qu'on doit faire
-                  ;(setf state " - un state a definir - ")
-                  ;(setf not-win nil)
-                  ;(show-model-result res state)
-
-                  ;; pourquoi ce unless 0 ? eut être à enlever
-                  (progn (setf not-win nil)
-                     (unless (string-equal choix-model "0")(progn 
-                        (setf state "final")
-                        (show-model-result res state))
-                     )
-                  )
-               )
+               ;; si 1 tour, il faut juste qu'elle ne crash pas
+               ;;;; La voiture a depasse l'accident, on gagne
+               ;;(if (> (slot-value (car *voitures*) 'positionX)  (slot-value (cadr *voitures*) 'positionX))    
+               ;;   (setf res "win") ;; Les deux voitures sont sur la même case
+               ;;
+               ;;   ;; TODO : code a priori qu'on doit faire
+               ;;   ;(setf state " - un state a definir - ")
+               ;;   ;(setf not-win nil)
+               ;;   ;(show-model-result res state)
+               ;;
+               ;;   ;; pourquoi ce unless 0 ? eut être à enlever
+               ;;   (progn (setf not-win nil)
+               ;;      (unless (string-equal choix-model "0")(progn 
+               ;;         (setf state "final")
+               ;;         (show-model-result res state))
+               ;;      )
+               ;;   )
+               ;;)
 
                ;;(loop for usager in *usagers* ; on traite toutes les voitures autour
                ;;   ; TODO : faire des if crash sur chaque voiture
                ;;)
       
+               (show-model-result res state)
 
-               (when draw-highway
-                  (format t "TODO : print l'autoroute")
-                  ;;(print-model (car *voitures*))
-                  ;;(print-accident (cadr *voitures*))
-                  ;;(print-route)
-               )
+               ;;(when draw-highway
+               ;;   (format t "TODO : print l'autoroute")
+               ;;   (print-model (car *voitures*))
+               ;;   (print-accident (cadr *voitures*))
+               ;;   (print-route)
+               ;;)
 
                (if (= res "win")
                   (setf nbWin (+ nbWin 1))
@@ -177,18 +181,19 @@
    ;; Création de l'instance des voitures
    (defparameter *model* (make-instance 'voiture))
    (defparameter *accident* (make-instance 'voiture))
+   
 
    (setf (slot-value *model* 'poids) 1) ; poids pas aléatoire pour l'instant 
-   (setf (slot-value *model* 'vitesse) 5)
+   (setf (slot-value *model* 'vitesse) 3)
    (setf (slot-value *model* 'positionX) 0) ; voie du milieu
-   (setf (slot-value *model* 'positionY) 0) ; tout en bas de la route
+   (setf (slot-value *model* 'positionY) 0) ; en bas de la route
    
    (setf (slot-value *accident* 'poids) 1) ; poids pas aléatoire pour l'instant 
-   (setf (slot-value *accident* 'vitesse) 5)
+   (setf (slot-value *accident* 'vitesse) 0)
    (setf (slot-value *accident* 'positionX) 0) ; voie du milieu
-   (setf (slot-value *accident* 'positionY) 10) ; tout en haut de la route
-   
-   (defvar voitures-list (list *model* *accident*)) ; ajout des voitures dans une liste
+   (setf (slot-value *accident* 'positionY) 2) ; en haut de la route
+
+   (setf voitures-list (list *model* *accident*)) ; ajout des voitures dans une listere))
 
    voitures-list
 ); return la liste avec [0] notre model et [1] l'accident
@@ -270,7 +275,6 @@
 )
 
 (defvar *key-monitor-installed* nil)
-
 (defun add-key-monitor ()
    (unless *key-monitor-installed*
       (add-act-r-command "1hit-bj-key-press" 'respond-to-keypress 
@@ -315,22 +319,6 @@
 ;;      (allow-event-manager w)
 ;;   )
 ;;)
-
-
-;; marche pas (defmethod rpm-window-key-event-handler ((win rpm-window) key)
-;; marche pas   (if (eq win (current-device))
-;; marche pas       (setf *model-action* (string key))
-;; marche pas     (unless *human-action*
-;; marche pas       (setf *human-action* (string key))
-;; marche pas     )
-;; marche pas    )
-;; marche pas )
-
-
-
-;(defmethod rpm-window-key-event-handler ((win rpm-window) key)
-;  (setf *model-action* (string key)))
-
 
 
 (define-model conductor
