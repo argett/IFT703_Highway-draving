@@ -1,6 +1,6 @@
 (clear-all)
 
-(defvar *model-action* nil) ; La variable que le model devra remplir (liste de valise)
+(defvar *model-action* ) ; La variable que le model devra remplir (liste de valise)
 ;; Classe voiture
 (defclass voiture()
    (poids
@@ -9,6 +9,7 @@
    positionY
    )
 )
+
 
 (defun show-learning (n &optional (graph t))
    (let (points)
@@ -41,9 +42,7 @@
 ;; Fonction pour placer les voitures sur les voies
 (defun place_elements (n-times &optional (draw-highway nil))
    
-   (let (need-to-remove (add-key-monitor))
-   
-      (format t "ca marche ~C~C" #\return #\linefeed )
+   (let (scores (need-to-remove (add-key-monitor)))
       (setf nbWin 0)
       (dotimes (i n-times)
          (setf tour 1)
@@ -205,7 +204,7 @@
             (setf (slot-value voiture 'poids) 1) ; poids pas aléatoire pour l'instant 
             (setf (slot-value voiture 'vitesse) moyen)
             (setf (slot-value voiture 'positionX) (act-r-random 2)) ; voie du milieu
-            (setf (slot-value voiture 'positionY) (3+ (act-r-random 5))) ; quelque part sur l'axe y
+            (setf (slot-value voiture 'positionY) (+ 3 (act-r-random 5))) ; quelque part sur l'axe y
             ;; Dimension selon la catégorie
             (case (slot-value voiture 'positionX)
                (1 (progn (setf (slot-value voiture 'positionX)-1)))
@@ -250,7 +249,6 @@
    (format t "ACTR Action ~C~C" #\return #\linefeed )
    (run-full-time 10)
    *model-action*
-   (format t "LISP reprend le controle avec ~s ~C~C" *model-action* #\return #\linefeed )
 )
 
 
@@ -269,6 +267,31 @@
       )
    )
    (run-full-time 10)
+)
+
+(defvar *key-monitor-installed* nil)
+
+(defun add-key-monitor ()
+   (unless *key-monitor-installed*
+      (add-act-r-command "1hit-bj-key-press" 'respond-to-keypress 
+                        "highway task key output monitor")
+      (monitor-act-r-command "output-key" "1hit-bj-key-press")
+      (setf *key-monitor-installed* t)
+   )
+)
+
+(defun respond-to-keypress (model key)
+   (if model
+      (setf *model-action* key)
+      (clear-exp-window)
+   )
+   key
+)
+
+(defun remove-key-monitor ()
+  (remove-act-r-command-monitor "output-key" "1hit-bj-key-press")
+  (remove-act-r-command "1hit-bj-key-press")
+  (setf *key-monitor-installed* nil)
 )
 
 ;;(defun draw-graph (points)
@@ -294,36 +317,6 @@
 ;;)
 
 
-(defvar *key-monitor-installed* nil)
-
-(defun add-key-monitor ()
-   (unless *key-monitor-installed*
-      (add-act-r-command "highway-key-press" 'respond-to-keypress 
-                        "highway task key output monitor")
-      (monitor-act-r-command "output-key" "highway-key-press")
-      (setf *key-monitor-installed* t)
-   )
-   (format t "CPT MONITOR APRES ~C~C" #\return #\linefeed )
-)
-
-(defun respond-to-keypress (model key)
-   (format t "Respond to keypress avant model = ~s ~C~C" model #\return #\linefeed )
-   (if model
-      (setf *model-action* key)
-      (clear-exp-window)
-   )
-
-   (format t "Respond to keypress apres key = ~s ~C~C" key #\return #\linefeed )
-   (format t "Respond to keypress apres *model action* = ~s ~C~C" *model-action* #\return #\linefeed )
-   (format t "Respond to keypress apres model action = ~s ~C~C" model-action #\return #\linefeed )
-   
-   )
-
-(defun remove-key-monitor ()
-  (remove-act-r-command-monitor "output-key" "highway-key-press")
-  (remove-act-r-command "highway-key-press")
-  (setf *key-monitor-installed* nil)
-)
 ;; marche pas (defmethod rpm-window-key-event-handler ((win rpm-window) key)
 ;; marche pas   (if (eq win (current-device))
 ;; marche pas       (setf *model-action* (string key))
@@ -689,9 +682,9 @@
          state          free
    ==>
       =goal>
-         isa            check-state
-         state          finish
-         action         "1"
+         ;isa            check-state
+         state          nil
+         ;action         1
       +manual>
          cmd            press-key
          key            "1"
