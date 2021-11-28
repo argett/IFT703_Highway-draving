@@ -110,9 +110,8 @@
                ;)  
 
                ;; on fait avancer la voiture selon sa vitesse
-               (format t "~s + ~s =  ~C~C" (slot-value (car *voitures*) 'positionY) (slot-value (car *voitures*) 'vitesse) #\return #\linefeed )
                (setf (slot-value (car *voitures*) 'positionY) (+ (slot-value (car *voitures*) 'positionY) (slot-value (car *voitures*) 'vitesse)))
-               (format t "= ~s  ~C~C" (slot-value (car *voitures*) 'positionY) #\return #\linefeed )
+
 
                ;; Les deux voitures sont sur la même case
                (if (and (= (slot-value (car *voitures*) 'positionX)  (slot-value (cadr *voitures*) 'positionX))  
@@ -161,7 +160,7 @@
                ;;   (print-route)
                ;;)
 
-               (if (= res "win")
+               (if (= res "esquive")
                   (setf nbWin (+ nbWin 1))
                )
             )
@@ -207,7 +206,7 @@
    (loop for voiture in voitures-autour-list 
       do (progn
             (setf (slot-value voiture 'poids) 1) ; poids pas aléatoire pour l'instant 
-            (setf (slot-value voiture 'vitesse) moyen)
+            (setf (slot-value voiture 'vitesse) (act-r-random 3)) 
             (setf (slot-value voiture 'positionX) (act-r-random 2)) ; voie du milieu
             (setf (slot-value voiture 'positionY) (+ 3 (act-r-random 5))) ; quelque part sur l'axe y
             ;; Dimension selon la catégorie
@@ -257,7 +256,8 @@
 )
 
 
-(defun show-model-result (res state)
+(defun show-model-result (res etat)
+   (format t "ACTR Action avec res = ~s / state = ~s ~C~C" res state #\return #\linefeed )
    (if (buffer-read 'goal) ; s'il y a un chunk dans le buffers goal
       (mod-focus-fct `(result ,res
                         state ,state)
@@ -360,21 +360,22 @@
       (choice           isa chunk) 
       (applyAction      isa chunk) 
       (finish           isa chunk) 
+
+      (brake_soft       isa chunk) 
+      (brake_hard       isa chunk) 
+      (turn_right       isa chunk) 
+      (turn_left        isa chunk)
+      
+      (enregistre       isa chunk) 
    )
 
    (add-dm
       ;;Les voitures sont générées par le code LISP
-
       (brakeSoft isa brake power 1)
       (brakeHard isa brake power 2)
 
       (turnR isa turn xRelativePosition 1) 
       (turnL isa turn xRelativePosition -1)
-
-   ;; changement de vitesse
-
-      ;(v1 ISA changeSpeed old "rapide" new "moyen")
-      ;(v2 ISA changeSpeed old "moyen" new "lent")
    )
 
    
@@ -735,22 +736,39 @@
    ;;
    ;;(p lookLeft
    ;;   =goal>
-   ;;    ISA                 a
-   ;;    a                   a
+   ;;    ISA            a
+   ;;    a              a
    ;;  =retrieval>
-   ;;    ISA                 a
-   ;;    a                   a
-   ;;    a                   a
+   ;;    ISA            a
+   ;;    a              a
+   ;;    a              a
    ;;==>
    ;;  =goal>
    ;;   ; ???
    ;;  =retrieval>
    ;;    ISA speed
-   ;;    a         a
-   ;;    a         a
+   ;;    a              a
+   ;;    a              a
    ;;)
    ;;
    ;(goal-focus check-state)
 
+   (p save-win
+      =goal>
+         state          "brake_soft"
+         res            "esquive"
+   ==>
+      =goal>
+         state          enregistre
+   )
+
+   (p save-lose
+      =goal>
+         state          "brake_soft"
+         res            "crash"
+   ==>
+      =goal>
+         state          enregistre
+   )
 )
 
