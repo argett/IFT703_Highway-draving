@@ -74,7 +74,7 @@
                (if (string-equal "1" choix-model) 
                   (progn
                      (setf (slot-value (car *voitures*) 'vitesse) (- (slot-value (car *voitures*) 'vitesse) 1))
-                     (setf state "brake_soft")
+                     (setf state "1")
                      (format t "Le modele freine doucement v= ~s ~C~C" (slot-value (car *voitures*) 'vitesse) #\return #\linefeed )
                   )
                )
@@ -82,7 +82,7 @@
                (if (string-equal "2" choix-model) 
                   (progn
                      (setf (slot-value (car *voitures*) 'vitesse) (- (slot-value (car *voitures*) 'vitesse) 2))
-                     (setf state "brake_hard")
+                     (setf state "2")
                      (format t "Le modele freine fort v= ~s ~C~C" (slot-value (car *voitures*) 'vitesse) #\return #\linefeed )
                   )
                )
@@ -90,7 +90,7 @@
                (if (string-equal "3" choix-model) 
                   (progn
                      (setf (slot-value (car *voitures*) 'positionX) (+ (slot-value (car *voitures*) 'positionX) 1))
-                     (setf state "turn_right")
+                     (setf state "3")
                      (format t "Le modele tourne a droite ~C~C" #\return #\linefeed )
                   )
                )
@@ -98,7 +98,7 @@
                (if (string-equal "4" choix-model) 
                   (progn
                      (setf (slot-value (car *voitures*) 'positionX) (- (slot-value (car *voitures*) 'positionX) 1))
-                     (setf state "turn_left")
+                     (setf state "4")
                      (format t "Le modele tourne a gauche ~C~C" #\return #\linefeed )
                   )
                )
@@ -160,11 +160,11 @@
                ;;   (print-route)
                ;;)
 
-               (if (= res "esquive")
+               (if (string-equal res "esquive")
                   (setf nbWin (+ nbWin 1))
                )
+               (format t "FIIIIIIIINNNNNNNNNNN ~C~C" #\return #\linefeed )
             )
-            (format t "Fin let ~C~C" #\return #\linefeed )
          )
       )
       (format t "On a win ~d fois sur ~d essais" nbWin n-times)
@@ -190,7 +190,7 @@
    (setf (slot-value *accident* 'poids) 1) ; poids pas aléatoire pour l'instant 
    (setf (slot-value *accident* 'vitesse) 0)
    (setf (slot-value *accident* 'positionX) 0) ; voie du milieu
-   (setf (slot-value *accident* 'positionY) 2) ; en haut de la route
+   (setf (slot-value *accident* 'positionY) 5) ; en haut de la route
 
    (setf voitures-list (list *model* *accident*)) ; ajout des voitures dans une listere))
 
@@ -223,8 +223,8 @@
 (defun show-model-highway (voitures &optional res state)
    (format t "Goal buffer = ~s ~C~C" (buffer-read 'goal) #\return #\linefeed )
    (if (buffer-read 'goal) ;; s'il y a un chunk dans le buffers goal 
-      (mod-focus-fct `(state ,"non accidente "
-                        result      ,"TODO"
+      (mod-focus-fct `(state        ,res
+                        result      ,state
                         m_weight    ,(slot-value (car voitures) 'poids) 
                         m_positionX ,(slot-value (car voitures) 'positionX) 
                         m_positionY ,(slot-value (car voitures) 'positionY) 
@@ -257,22 +257,26 @@
 
 
 (defun show-model-result (res etat)
-   (format t "ACTR Action avec res = ~s / state = ~s ~C~C" res state #\return #\linefeed )
+   (format t "ACTR Action avec res = ~s / state = ~s ~C~C" res etat #\return #\linefeed )
    (if (buffer-read 'goal) ; s'il y a un chunk dans le buffers goal
-      (mod-focus-fct `(result ,res
-                        state ,state)
+      (progn
+         (mod-focus-fct `(result ,res
+                        state ,etat)
+         )
       )
-      (goal-focus-fct (car (define-chunks-fct ; crée un nouveau chunk et le met dans le goal
+      (progn
+         (goal-focus-fct (car (define-chunks-fct ; crée un nouveau chunk et le met dans le goal
                              `(isa check-state
                                  result ,res
-                                 state ,state
-                                 id, 0)
+                                 state ,etat)
                            )
                         )
+         )
       )
    )
    (run-full-time 10)
 )
+
 
 (defvar *key-monitor-installed* nil)
 (defun add-key-monitor ()
@@ -359,7 +363,6 @@
       (begin-model      isa chunk)
       (choice           isa chunk) 
       (applyAction      isa chunk) 
-      (finish           isa chunk) 
 
       (brake_soft       isa chunk) 
       (brake_hard       isa chunk) 
@@ -367,6 +370,8 @@
       (turn_left        isa chunk)
       
       (enregistre       isa chunk) 
+      (finish           isa chunk) 
+      (finish2          isa chunk) 
    )
 
    (add-dm
@@ -755,20 +760,184 @@
 
    (p save-win
       =goal>
-         state          "brake_soft"
-         res            "esquive"
+         result         "esquive"
+       - state          enregistre
+       - state          finish
+       - state          finish2
+         state          =ste
    ==>
       =goal>
          state          enregistre
+         action         =ste
+   )
+   
+   (p save-loose
+      =goal>
+         result         "crash"
+       - state          enregistre
+       - state          finish
+       - state          finish2
+         state          =ste
+   ==>
+      =goal>
+         state          finish
+         result         =ste
    )
 
-   (p save-lose
-      =goal>
-         state          "brake_soft"
-         res            "crash"
-   ==>
+   (p memorize-b-soft
       =goal>
          state          enregistre
+         ;result         "win"
+         action         "1"
+         m_weight       =a
+         m_positionX    =b
+         m_positionY    =c
+         m_vitesse      =l
+         a_positionX    =d
+         a_positionY    =e
+         a_vitesse      =f
+      ?imaginal>
+         state          free    
+      ==>
+      +imaginal>
+         isa            learned-info
+         result         "esquive"
+         m_weight       =a
+         m_positionX    =b
+         m_positionY    =c
+         m_vitesse      =l
+         a_positionX    =d
+         a_positionY    =e
+         a_vitesse      =f
+         b_soft         t
+       - b_hard         nil
+       - t_left         nil
+       - t_right        nil
+      -imaginal>
+      =goal>
+         state          finish
    )
+
+   (p memorize-b-hard
+      =goal>
+         state          enregistre
+         ;result         "win"
+         action         "2"
+         m_weight       =a
+         m_positionX    =b
+         m_positionY    =c
+         m_vitesse      =l
+         a_positionX    =d
+         a_positionY    =e
+         a_vitesse      =f
+      ?imaginal>
+         state          free    
+      ==>
+      +imaginal>
+         isa            learned-info
+         result         "esquive"
+         m_weight       =a
+         m_positionX    =b
+         m_positionY    =c
+         m_vitesse      =l
+         a_positionX    =d
+         a_positionY    =e
+         a_vitesse      =f
+         b_hard         t
+       - b_soft         nil
+       - t_left         nil
+       - t_right        nil
+      -imaginal>
+      =goal>
+         state          finish
+   )
+   
+   (p memorize-r-turn
+      =goal>
+         state          enregistre
+         ;result         "win"
+         action         "3"
+         m_weight       =a
+         m_positionX    =b
+         m_positionY    =c
+         m_vitesse      =l
+         a_positionX    =d
+         a_positionY    =e
+         a_vitesse      =f
+      ?imaginal>
+         state          free    
+      ==>
+      +imaginal>
+         isa            learned-info
+         result         "esquive"
+         m_weight       =a
+         m_positionX    =b
+         m_positionY    =c
+         m_vitesse      =l
+         a_positionX    =d
+         a_positionY    =e
+         a_vitesse      =f
+         t_right        t
+       - t_left         nil
+       - b_soft         nil
+       - b_hard         nil
+      -imaginal>
+      =goal>
+         state          finish
+   )
+
+   
+   (p memorize-l-turn
+      =goal>
+         state          enregistre
+         ;result         "win"
+         action         "4"
+         m_weight       =a
+         m_positionX    =b
+         m_positionY    =c
+         m_vitesse      =l
+         a_positionX    =d
+         a_positionY    =e
+         a_vitesse      =f
+      ?imaginal>
+         state          free    
+      ==>
+      +imaginal>
+         isa            learned-info
+         result         "esquive"
+         m_weight       =a
+         m_positionX    =b
+         m_positionY    =c
+         m_vitesse      =l
+         a_positionX    =d
+         a_positionY    =e
+         a_vitesse      =f
+         t_left         t
+       - t_right        nil
+       - b_soft         nil
+       - b_hard         nil
+      -imaginal>
+      =goal>
+         state          finish
+   )
+
+   (p finish_saving
+      =goal>
+         state          finish
+      ?imaginal>
+         state          free
+      ==>
+      -imaginal>
+      =goal>
+         state          finish2
+   )
+
+   ;;(p clear-new-imaginal-chunk
+   ;;   ?imaginal>
+   ;;      state free
+   ;;      buffer full
+   ;;   ==>
+   ;;   -imaginal>
+   ;;)
 )
 
