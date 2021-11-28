@@ -170,9 +170,9 @@
       (format t "On a win ~d fois sur ~d essais" nbWin n-times)
    )
    
-   (when need-to-remove
-      (remove-key-monitor)
-   )
+   ;(when need-to-remove
+   ;   (remove-key-monitor)
+   ;)
 )
 
 
@@ -190,35 +190,35 @@
    (setf (slot-value *accident* 'poids) 1) ; poids pas aléatoire pour l'instant 
    (setf (slot-value *accident* 'vitesse) 0)
    (setf (slot-value *accident* 'positionX) 0) ; voie du milieu
-   (setf (slot-value *accident* 'positionY) 5) ; en haut de la route
+   (setf (slot-value *accident* 'positionY) 2) ; en haut de la route
 
    (setf voitures-list (list *model* *accident*)) ; ajout des voitures dans une listere))
 
    voitures-list
 ); return la liste avec [0] notre model et [1] l'accident
 
-(defun create-usagers() ;; TODO :pour plus tard
-   (defparameter *usager1* (make-instance 'voiture))
-   (defparameter *usager2* (make-instance 'voiture))
-   (defparameter *usager3* (make-instance 'voiture))
-
-   ; boucle qui génère les voitures autours (innutile au début)
-   (loop for voiture in voitures-autour-list 
-      do (progn
-            (setf (slot-value voiture 'poids) 1) ; poids pas aléatoire pour l'instant 
-            (setf (slot-value voiture 'vitesse) (act-r-random 3)) 
-            (setf (slot-value voiture 'positionX) (act-r-random 2)) ; voie du milieu
-            (setf (slot-value voiture 'positionY) (+ 3 (act-r-random 5))) ; quelque part sur l'axe y
-            ;; Dimension selon la catégorie
-            (case (slot-value voiture 'positionX)
-               (1 (progn (setf (slot-value voiture 'positionX)-1)))
-               (3 (progn (setf (slot-value voiture 'positionX) 1)))
-            )
-            )
-   )
-   (defvar voitures-autour-list (list *usager1* *usager2*  *usager3*))
-   voitures-autour-list
-)
+;(defun create-usagers() ;; TODO :pour plus tard
+;   (defparameter *usager1* (make-instance 'voiture))
+;   (defparameter *usager2* (make-instance 'voiture))
+;   (defparameter *usager3* (make-instance 'voiture))
+;
+;   ; boucle qui génère les voitures autours (innutile au début)
+;   (loop for voiture in voitures-autour-list 
+;      do (progn
+;            (setf (slot-value voiture 'poids) 1) ; poids pas aléatoire pour l'instant 
+;            (setf (slot-value voiture 'vitesse) (act-r-random 3)) 
+;            (setf (slot-value voiture 'positionX) (act-r-random 2)) ; voie du milieu
+;            (setf (slot-value voiture 'positionY) (+ 3 (act-r-random 5))) ; quelque part sur l'axe y
+;            ;; Dimension selon la catégorie
+;            (case (slot-value voiture 'positionX)
+;               (1 (progn (setf (slot-value voiture 'positionX)-1)))
+;               (3 (progn (setf (slot-value voiture 'positionX) 1)))
+;            )
+;            )
+;   )
+;   (defvar voitures-autour-list (list *usager1* *usager2*  *usager3*))
+;   voitures-autour-list
+;)
 
 (defun show-model-highway (voitures &optional res state)
    (format t "Goal buffer = ~s ~C~C" (buffer-read 'goal) #\return #\linefeed )
