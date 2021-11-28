@@ -47,7 +47,6 @@
 
       (setf nbWin 0)
       (dotimes (i n-times)
-         (format t "~C~C --- Essai numero ~d --- ~C~C" i #\return #\linefeed )
          (setf *voitures* (create-voitures)); Creation de notre voiture et de la voiture accident
          (setf m_oldSped (slot-value (car *voitures*) 'vitesse)) 
          (setf m_oldPosX (slot-value (car *voitures*) 'positionX)) 
@@ -55,16 +54,23 @@
 
          (setf tour 1)
          (setf not-win t) ; t = true, nil = false
+         (setf res nil)
+         (setf state nil)
 
          ;; TODO : creation d'autres usagers = (setf *usagers* (create-usagers)); Creation des voitures des autres usagers si complexification
 
          (while not-win ; appeler le modèle tant qu'il n'a pas win ou pas crash         
             (format t "    On est dans la boucle ~d fois ~C~C" tour #\return #\linefeed )
-            (setf res nil)
-            (setf state nil)
+
+            (if (> tour 1) 
+               (progn
+                  (setf res nil)
+                  (setf state "end_set")
+               )
+            )
 
             ;; On reset la position des modele dans la cas où on a perdu avant
-            ;; 1er élément de la liste, donc notre modele
+            ; 1er élément de la liste, donc notre modele
             (setf (slot-value (car *voitures*) 'vitesse) m_oldSped) 
             (setf (slot-value (car *voitures*) 'positionX) m_oldPosX) 
             (setf (slot-value (car *voitures*) 'positionY) m_oldPosY) 
@@ -192,7 +198,7 @@
    (setf (slot-value *accident* 'poids) 1) ; poids pas aléatoire pour l'instant 
    (setf (slot-value *accident* 'vitesse) 0)
    (setf (slot-value *accident* 'positionX) 0) ; voie du milieu
-   (setf (slot-value *accident* 'positionY) 5) ; en haut de la route
+   (setf (slot-value *accident* 'positionY) 2) ; en haut de la route
 
    (setf voitures-list (list *model* *accident*)) ; ajout des voitures dans une listere))
 
@@ -229,7 +235,7 @@
                         m_positionY ,(slot-value (car voitures) 'positionY) 
                         m_vitesse   ,(slot-value (car voitures) 'vitesse) 
                         result      ,nil ;; pourquoi mettre res ici ?
-                        state       re-start ;; il faut reset au moins les positions et la vitesse
+                        state       state ;; on tente de se remember directement
                      ) 
       )
       (goal-focus-fct (car (define-chunks-fct ; crée un nouveau chunk et le met dans le goal
@@ -255,18 +261,17 @@
 
 
 (defun show-model-result (res etat)
-   (format t "ACTR Action avec res = ~s / state = ~s ~C~C" res etat #\return #\linefeed )
    (if (buffer-read 'goal) ; s'il y a un chunk dans le buffers goal
       (progn
          (mod-focus-fct `(result ,res
-                        state ,etat)
+                           state ,"startEnregistre")
          )
       )
       (progn
          (goal-focus-fct (car (define-chunks-fct ; crée un nouveau chunk et le met dans le goal
                              `(isa check-state
                                  result ,res
-                                 state ,etat)
+                                 state ,"startEnregistre")
                            )
                         )
          )
@@ -333,13 +338,13 @@
 
    (chunk-type check-state state result m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse action)
    ; TODO : nom de chunktype a changer car copier coller
-   (chunk-type learned-info result m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse t_left t_right b_soft b_hard)
+   (chunk-type learned-info result m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse)
    (chunk-type car id weight)
    (chunk-type position id positionX positionY)
    (chunk-type speed id vitesse)
 
-   (chunk-type turn xRelativePosition)
-   (chunk-type brake power)
+   ;; a enlever (chunk-type turn xRelativePosition)
+   ;; a enlever (chunk-type brake power)
 
 
 
@@ -356,11 +361,10 @@
       (save_acc_pos     isa chunk)
       (save_acc_speed   isa chunk)
       (re-start-suite   isa chunk)
-      (end_set          isa chunk)
 
       (remembering      isa chunk) 
-      (begin-model      isa chunk)
       (choice           isa chunk) 
+      (choseAction      isa chunk)
       (applyAction      isa chunk) 
 
       (brake_soft       isa chunk) 
@@ -368,7 +372,7 @@
       (turn_right       isa chunk) 
       (turn_left        isa chunk)
       
-      (enregistre       isa chunk) 
+      (enregistre       isa chunk)  
       (finish           isa chunk) 
       (finish2          isa chunk) 
    )
@@ -503,7 +507,7 @@
          vitesse        =z
       -imaginal> 
       =goal>
-         state          end_set
+         state          "end_set"
    )
 
    ;; ------------------ Modification des donnees  ------------------
@@ -549,18 +553,25 @@
             isa            speed
             vitesse        =v
          =goal>
-            state          end_set
+            state          "end_set"
       )
 
    ;; ----------------- Enregistrement des donnees  -----------------
    ;; On essaie de se souvenir si la situation s'est déjà présenté
-   ;; Sinon, on tente de freiner, touner ou freiner fort
+   ;; Si on se souviens d'une situation win : 
+   ;;    on applique la meme chose
+   ;; Si on se souviens d'une situation loose :
+   ;;    on a lose en freinant soft -> on freine hard
+   ;;    on a lose en freinant hard -> on turn right
+   ;;    on a lose en turn right -> on turn left
+   ;;
+   ;; Si on ne se souvient pas, on freine soft
    ;; ---------------------------------------------------------------
 
    (p try_load
       =goal>
          isa            check-state
-         state          end_set
+         state          "end_set"
          m_weight       =a
          m_positionX    =b
          m_positionY    =c
@@ -592,94 +603,63 @@
       =retrieval>
          isa            learned-info
          result         =res
-         t_left         =tl
-         t_right        =tr
-         b_soft         =bs
-         b_hard         =bh
-
-         ;m_weight       =a
-         ;m_positionX    =b
-         ;m_positionY    =c
-         ;m_vitesse      =d
-         ;a_positionX    =x
-         ;a_positionY    =y
-         ;a_vitesse      =z
+         action         =act
       ==>
       =goal>
          isa            learned-info
-         state          applyAction
+         state          choseAction
          result         =res
-         t_left         =tl
-         t_right        =tr
-         b_soft         =bs
-         b_hard         =bh
-;; innutile je pense
-         ;m_weight       =a
-         ;m_positionX    =b
-         ;m_positionY    =c
-         ;m_vitesse      =d
-         ;a_positionX    =x
-         ;a_positionY    =y
-         ;a_vitesse      =z
+         action         =act
    )
 
-   (p win-b-soft
+   (p remember-win
+      =goal>
+         isa            learned-info
+         state          choseAction
+         results        "esquive"
+         action         =act
+      ==>
+      =goal>
+         state          applyAction
+         action         =act
+   )
+
+   (p remember-lose-b-soft
+      =goal>
+         isa            learned-info
+         state          choseAction
+         results        "crash"
+         action         "1"
+      ==>
+      =goal>
+         state          applyAction
+         action         "2"
+   )
+
+   (p remember-lose-b-hard
       =goal>
          isa            learned-info
          state          applyAction
-        -b_soft         lose
+         results        "crash"
+         action         "2"
       ==>
       =goal>
-         isa            brake
-         power          1
+         state          applyAction
+         action         "3"
    )
 
-   (p win-b-hard
+   (p remember-lose-t-rigth
       =goal>
          isa            learned-info
          state          applyAction
-        -b_hard         lose
+         results        "crash"
+         action         "3"
       ==>
       =goal>
-         isa            brake
-         power          2
-   )
-
-   (p win-t-right
-      =goal>
-         isa            learned-info
          state          applyAction
-        -t_right        lose
-      ==>
-      =goal>
-         isa            turnR
-         xRelativePosition 1
+         action         "4"
    )
 
-   (p win-t-left
-      =goal>
-         isa            learned-info
-         state          applyAction
-        -t_left         lose
-      ==>
-      =goal>
-         isa            turnL
-         xRelativePosition -1
-   )
-
-   ;; est-ce qu'il faut faire les 4 mêmes pour lose ? 
-
-   ;(p dont-Lose
-   ;   =goal>
-   ;      isa            check-state
-   ;      state          applyAction
-   ;      result         lose
-   ;      action         =act
-   ;   ==>
-   ;   =goal>
-   ;      state          choice
-   ;     -result         =act ;; est ce que ça marche 
-   ;)
 
    (p doesnt-remember-organization
       =goal>
@@ -689,36 +669,22 @@
          buffer         failure
       ==>
       =goal>
-         state          begin-model
-   )
-
-   (p begin
-      =goal>
-         isa            check-state
-         state          begin-model
-      ==>
-      ; Quand on sait pas quoi faire on freine doucement
-      =goal>
-         ISA            brake
-         state          activate
-         power          1
-
+         state          applyAction
+         action         "1"
    )
 
    ;;;;;;;;;;;; Brakes ;;;;;;;;;;;;
    
    (p brakeSoft
-      =goal>
-         isa            brake
-         state          activate
-         power          1
+      =goal>  
+         state          applyAction
+         action         "1"
      ?manual>
          state          free
    ==>
       =goal>
-         ;isa            check-state
          state          nil
-         ;action         1
+         action         "1"
       +manual>
          cmd            press-key
          key            "1"
@@ -726,15 +692,13 @@
    
    (p brakeHard
       =goal>
-         ISA            brake
-         state          activate
-         power          2
+         state          applyAction
+         action         "2"
      ?manual>
          state          free
    ==>
       =goal>
-         isa            check-state
-         state          finish
+         state          nil
          action         "2"
       +manual>
          cmd            press-key
@@ -745,15 +709,13 @@
    
    (p turnR
       =goal>
-         ISA                  turn
-         state                activate
-         xRelativePosition    1
+         state          applyAction
+         action         "3"
      ?manual>
          state          free
    ==>
       =goal>
-         isa            check-state
-         state          finish
+         state          nil
          action         "3"
        +manual>
          cmd            press-key
@@ -762,15 +724,13 @@
 
    (p turnL
       =goal>
-         ISA                  turn
-         state                activate
-         xRelativePosition    -1
+         state          applyAction
+         action         "4"
      ?manual>
          state          free
    ==>
       =goal>
-         isa            check-state
-         state          finish
+         state          nil
          action         "4"
        +manual>
          cmd            press-key
@@ -802,37 +762,23 @@
    ;;;;;;;;;;;;;;;;;;;; Sauvegardes ;;;;;;;;;;;;;;;;;;;;
 
 
-   (p save-win
+   (p start-save
       =goal>
-         result         "esquive"
-       - state          enregistre
-       - state          finish
-       - state          finish2
-         state          =ste
+         state          "startEnregistre"
+         result         =res
+         action         =act
    ==>
       =goal>
          state          enregistre
-         action         =ste
-   )
-   
-   (p save-loose
-      =goal>
-         result         "crash"
-       - state          enregistre
-       - state          finish
-       - state          finish2
-         state          =ste
-   ==>
-      =goal>
-         state          finish
-         result         =ste
+         result         =res
+         action         =act
    )
 
-   (p memorize-b-soft
+   (p save
       =goal>
          state          enregistre
-         ;result         "win"
-         action         "1"
+         result         =res
+         action         =act
          m_weight       =a
          m_positionX    =b
          m_positionY    =c
@@ -845,7 +791,8 @@
       ==>
       +imaginal>
          isa            learned-info
-         result         "esquive"
+         result         =res
+         action         =act
          m_weight       =a
          m_positionX    =b
          m_positionY    =c
@@ -853,121 +800,29 @@
          a_positionX    =d
          a_positionY    =e
          a_vitesse      =f
-         b_soft         t
-      -imaginal>
       =goal>
          state          finish
    )
 
-   (p memorize-b-hard
-      =goal>
-         state          enregistre
-         ;result         "win"
-         action         "2"
-         m_weight       =a
-         m_positionX    =b
-         m_positionY    =c
-         m_vitesse      =l
-         a_positionX    =d
-         a_positionY    =e
-         a_vitesse      =f
-      ?imaginal>
-         state          free    
-      ==>
-      +imaginal>
-         isa            learned-info
-         result         "esquive"
-         m_weight       =a
-         m_positionX    =b
-         m_positionY    =c
-         m_vitesse      =l
-         a_positionX    =d
-         a_positionY    =e
-         a_vitesse      =f
-         b_hard         t
-      -imaginal>
-      =goal>
-         state          finish
-   )
-   
-   (p memorize-r-turn
-      =goal>
-         state          enregistre
-         ;result         "win"
-         action         "3"
-         m_weight       =a
-         m_positionX    =b
-         m_positionY    =c
-         m_vitesse      =l
-         a_positionX    =d
-         a_positionY    =e
-         a_vitesse      =f
-      ?imaginal>
-         state          free    
-      ==>
-      +imaginal>
-         isa            learned-info
-         result         "esquive"
-         m_weight       =a
-         m_positionX    =b
-         m_positionY    =c
-         m_vitesse      =l
-         a_positionX    =d
-         a_positionY    =e
-         a_vitesse      =f
-         t_right        t
-       - t_left         nil
-       - b_soft         nil
-       - b_hard         nil
-      -imaginal>
-      =goal>
-         state          finish
-   )
-
-   
-   (p memorize-l-turn
-      =goal>
-         state          enregistre
-         ;result         "win"
-         action         "4"
-         m_weight       =a
-         m_positionX    =b
-         m_positionY    =c
-         m_vitesse      =l
-         a_positionX    =d
-         a_positionY    =e
-         a_vitesse      =f
-      ?imaginal>
-         state          free    
-      ==>
-      +imaginal>
-         isa            learned-info
-         result         "esquive"
-         m_weight       =a
-         m_positionX    =b
-         m_positionY    =c
-         m_vitesse      =l
-         a_positionX    =d
-         a_positionY    =e
-         a_vitesse      =f
-         t_left         t
-       - t_right        nil
-       - b_soft         nil
-       - b_hard         nil
-      -imaginal>
-      =goal>
-         state          finish
-   )
+   ;;;;;;;;;;;;;;; On delete le buffer imaginal ;;;;;;;;;;;;;;;
 
    (p finish_saving
       =goal>
          state          finish
-      ?imaginal>
-         state          free
+         result         =res
       ==>
       -imaginal>
       =goal>
          state          finish2
+         result         =res
+   )
+   
+   (p clear-goal
+      =goal>
+         state          finish2
+         result         "esquive"
+      ==>
+      -goal>
    )
 
    ;;(p clear-new-imaginal-chunk
