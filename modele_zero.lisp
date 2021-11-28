@@ -65,7 +65,6 @@
             (if (> tour 1) 
                (progn
                   (setf res nil)
-                  (setf state "end_set")
                )
             )
 
@@ -171,7 +170,6 @@
                (if (string-equal res "esquive")
                   (setf nbWin (+ nbWin 1))
                )
-               (format t "FIIIIIIIINNNNNNNNNNN ~C~C" #\return #\linefeed )
             )
          )
       )
@@ -235,7 +233,7 @@
                         m_positionY ,(slot-value (car voitures) 'positionY) 
                         m_vitesse   ,(slot-value (car voitures) 'vitesse) 
                         result      ,nil ;; pourquoi mettre res ici ?
-                        state       state ;; on tente de se remember directement
+                        state       ,"end_set" ;; on tente de se remember directement
                      ) 
       )
       (goal-focus-fct (car (define-chunks-fct ; crée un nouveau chunk et le met dans le goal
@@ -626,7 +624,6 @@
 
    (p remember-lose-b-soft
       =goal>
-         isa            learned-info
          state          choseAction
          results        "crash"
          action         "1"
@@ -638,7 +635,6 @@
 
    (p remember-lose-b-hard
       =goal>
-         isa            learned-info
          state          applyAction
          results        "crash"
          action         "2"
@@ -650,7 +646,6 @@
 
    (p remember-lose-t-rigth
       =goal>
-         isa            learned-info
          state          applyAction
          results        "crash"
          action         "3"
@@ -663,7 +658,6 @@
 
    (p doesnt-remember-organization
       =goal>
-         isa            check-state
          state          remembering
       ?retrieval>
          buffer         failure
@@ -800,6 +794,7 @@
          a_positionX    =d
          a_positionY    =e
          a_vitesse      =f
+      -imaginal>
       =goal>
          state          finish
    )
