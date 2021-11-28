@@ -614,7 +614,7 @@
       =goal>
          isa            learned-info
          state          choseAction
-         results        "esquive"
+         result        "esquive"
          action         =act
       ==>
       =goal>
@@ -625,7 +625,7 @@
    (p remember-lose-b-soft
       =goal>
          state          choseAction
-         results        "crash"
+         result        "crash"
          action         "1"
       ==>
       =goal>
@@ -636,7 +636,7 @@
    (p remember-lose-b-hard
       =goal>
          state          applyAction
-         results        "crash"
+         result        "crash"
          action         "2"
       ==>
       =goal>
@@ -647,7 +647,7 @@
    (p remember-lose-t-rigth
       =goal>
          state          applyAction
-         results        "crash"
+         result        "crash"
          action         "3"
       ==>
       =goal>
