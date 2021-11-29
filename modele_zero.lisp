@@ -76,15 +76,7 @@
             (let ((choix-model (show-model-highway *voitures* res state))); Montre notre voiture et l'accident au modèle et enregistre la key pressée par le model
                (setf nbTry (+ nbTry 1))
 
-               ;; 0 = ne rien faire, 1 = frein faible, 2 = frein fort, 3 = tourne a droite, 4 = tourne a gauche
-               (if (string-equal "0" choix-model) 
-                  (progn
-                     ; ne change rien
-                     (setf state "0")
-                     (format t "Le modele ne fait rien ~C~C" (slot-value (car *voitures*) 'vitesse) #\return #\linefeed )
-                  )
-               )
-
+               ;; 1 = frein faible, 2 = frein fort, 3 = tourne a droite, 4 = tourne a gauche, 0 = ne rien faire
                (if (string-equal "1" choix-model) 
                   (progn
                      (setf (slot-value (car *voitures*) 'vitesse) (- (slot-value (car *voitures*) 'vitesse) 1))
@@ -114,6 +106,13 @@
                      (setf (slot-value (car *voitures*) 'positionX) (- (slot-value (car *voitures*) 'positionX) 1))
                      (setf state "4")
                      (format t "Le modele tourne a gauche ~C~C" #\return #\linefeed )
+                  )
+               )
+               (if (string-equal "5" choix-model) 
+                  (progn
+                     ; ne change rien
+                     (setf state "5")
+                     (format t "Le modele ne fait rien ~C~C" #\return #\linefeed )
                   )
                )
 
@@ -196,8 +195,8 @@
                ;;)
             )
          )
-         (format t "INFO : ~d /4 tentatives ~C~C" nbTry #\return #\linefeed )
-         (format t "INFO : On est ~d / ~d essais ~C~C" simulation n-times #\return #\linefeed )
+         (format t "INFO : ~d /??? tentatives ~C~C" nbTry #\return #\linefeed )
+         (format t "--------------- ~d / ~d ---------------~C~C" simulation n-times #\return #\linefeed )
       )
       (format t "~C~C ~C~C ~C~C" #\return #\linefeed #\return #\linefeed #\return #\linefeed )
    )
@@ -221,11 +220,18 @@
    (setf (slot-value *accident* 'positionX) (- (act-r-random 3) 1))  ; voie entre -1 et 1
    (setf (slot-value *accident* 'positionY) 2)  ; en haut de la route
    
+
    ; le but de cette voiture derriere est d'empecher notre modele de freiner fort, sinon crash
    (setf (slot-value *usager* 'poids) 0) ; poids pas aléatoire pour l'instant 
    (setf (slot-value *usager* 'vitesse) 0)
-   (setf (slot-value *usager* 'positionX) 0) ; juste derriere l'utilisateur
+   ; on rend 1/2 chance de mettre l'usager derriere pour augmenter les probas de crash, et 1/2 de la mettre a gauche
+   (setf behind (act-r-random 2))
+   (if (= behind 1)
+      (setf (slot-value *usager* 'positionX) -1)
+      (setf (slot-value *usager* 'positionX)  (slot-value *model* 'positionX))
+   )
    (setf (slot-value *usager* 'positionY) (- (slot-value *model* 'positionY) 1)) ; juste derriere l'utilisateur
+
 
    (print-Highway *model* *accident* *usager*)
 
@@ -733,6 +739,17 @@
          action         "4"
    )
 
+   (p remember-lose-t-left
+      =goal>
+         state          choseAction
+         result        "crash"
+         action         "4"
+      ==>
+      =goal>
+         state          applyAction
+         action         "5"
+   )
+
 
    (p doesnt-remember-organization
       =goal>
@@ -807,6 +824,24 @@
        +manual>
          cmd            press-key
          key            "4"
+   )
+
+   
+   ;;;;;;;;;;;; do nothing is the better sometimes ;;;;;;;;;;;; 
+
+   (p do-nothing
+      =goal>
+         state          applyAction
+         action         "5"
+     ?manual>
+         state          free
+   ==>
+      =goal>
+         state          nil
+         action         "5"
+       +manual>
+         cmd            press-key
+         key            "5"
    )
    
    ;;;;;;;;;;;;;;;; Take info ;;;;;;;;;;;;
