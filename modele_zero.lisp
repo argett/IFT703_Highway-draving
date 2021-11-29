@@ -76,7 +76,15 @@
             (let ((choix-model (show-model-highway *voitures* res state))); Montre notre voiture et l'accident au modèle et enregistre la key pressée par le model
                (setf nbTry (+ nbTry 1))
 
-               ;; 1 = frein faible, 2 = frein fort, 3 = tourne a droite, 4 = tourne a gauche
+               ;; 0 = ne rien faire, 1 = frein faible, 2 = frein fort, 3 = tourne a droite, 4 = tourne a gauche
+               (if (string-equal "0" choix-model) 
+                  (progn
+                     ; ne change rien
+                     (setf state "0")
+                     (format t "Le modele ne fait rien ~C~C" (slot-value (car *voitures*) 'vitesse) #\return #\linefeed )
+                  )
+               )
+
                (if (string-equal "1" choix-model) 
                   (progn
                      (setf (slot-value (car *voitures*) 'vitesse) (- (slot-value (car *voitures*) 'vitesse) 1))
@@ -134,16 +142,18 @@
                ;; on fait avancer la voiture selon sa vitesse
                (setf (slot-value (car *voitures*) 'positionY) (+ (+ (slot-value (car *voitures*) 'positionY) (slot-value (car *voitures*) 'vitesse)) (slot-value (car *voitures*) 'poids)))
 
-               ;; Les deux voitures sont sur la même case
-               (if (and (= (slot-value (car *voitures*) 'positionX)  (slot-value (cadr *voitures*) 'positionX))  
-                        (>= (slot-value (car *voitures*) 'positionY)  (slot-value (cadr *voitures*) 'positionY)))
+               ;; L'accident et la modele sont sur la même case ou si le modele freine fort alors que l'usager se trouve juste derrière
+               (if (or  (and (= (slot-value (car *voitures*) 'positionX)  (slot-value (cadr *voitures*) 'positionX))
+                             (>= (slot-value (car *voitures*) 'positionY)  (slot-value (cadr *voitures*) 'positionY)))
+                        (and (= (slot-value (car *voitures*) 'positionX)  (slot-value (caddr *voitures*) 'positionX))
+                             (string-equal choix-model "2")))                  
                   (progn
-                     (setf res "crash") 
+                     (setf res "crash")
                      (setf not-win t)
                      (format t "Le modele a crash ~C~C" #\return #\linefeed )
                   )
                   (progn
-                     (setf res "esquive") 
+                     (setf res "esquive")
                      (setf not-win nil)
                      (format t "Le modele a esquive ~C~C" #\return #\linefeed )
                   )
@@ -187,10 +197,6 @@
       )
       (format t "~C~C ~C~C ~C~C" #\return #\linefeed #\return #\linefeed #\return #\linefeed )
    )
-   
-   ;(when need-to-remove
-   ;   (remove-key-monitor)
-   ;)
 )
 
 
@@ -198,6 +204,7 @@
    ;; Création de l'instance des voitures
    (defparameter *model* (make-instance 'voiture))
    (defparameter *accident* (make-instance 'voiture))
+   (defparameter *usager* (make-instance 'voiture))
    
 
    (setf (slot-value *model* 'poids) (act-r-random 2)) 
@@ -205,17 +212,23 @@
    (setf (slot-value *model* 'positionX) 0);;(- (act-r-random 3) 1)) ; voie du milieu
    (setf (slot-value *model* 'positionY) (act-r-random 2)) ; en bas de la route
    
-   (setf (slot-value *accident* 'poids) 1) ; poids pas aléatoire pour l'instant 
-   (setf (slot-value *accident* 'vitesse) 0)
-   (setf (slot-value *accident* 'positionX) 0) ; voie du milieu
-   (setf (slot-value *accident* 'positionY) 2) ; en haut de la route
+   (setf (slot-value *accident* 'poids) 0)      ; pas d'importance
+   (setf (slot-value *accident* 'vitesse) 0)    ; pas d'importance
+   (setf (slot-value *accident* 'positionX) 0)  ; voie du milieu
+   (setf (slot-value *accident* 'positionY) 2)  ; en haut de la route
+   
+   ; le but de cette voiture derriere est d'empecher notre modele de freiner fort, sinon crash
+   (setf (slot-value *usager* 'poids) 0) ; poids pas aléatoire pour l'instant 
+   (setf (slot-value *usager* 'vitesse) 0)
+   (setf (slot-value *usager* 'positionX) 0) ; juste derriere l'utilisateur
+   (setf (slot-value *usager* 'positionY) (- (slot-value *model* 'positionY) 1)) ; juste derriere l'utilisateur
 
-   (print-Highway *model* *accident*)
+   (print-Highway *model* *accident* *usager*)
 
-   (setf voitures-list (list *model* *accident*)) ; ajout des voitures dans une listere))
+   (setf voitures-list (list *model* *accident* *usager*)) ; ajout des voitures dans une listere))
 
    voitures-list
-); return la liste avec [0] notre model et [1] l'accident
+); return la liste avec [0] notre model, [1] l'accident et [2] la BMW qui te colle derrière
 
 ;(defun create-usagers() ;; TODO :pour plus tard
 ;   (defparameter *usager1* (make-instance 'voiture))
@@ -259,6 +272,7 @@
                                  a_positionX ,(slot-value (cadr voitures) 'positionX) 
                                  a_positionY ,(slot-value (cadr voitures) 'positionY) 
                                  a_vitesse   ,(slot-value (cadr voitures) 'vitesse) 
+                                 u_positionX ,(slot-value (caddr voitures) 'positionX) 
                                  result      ,nil
                                  state       start
                               ))
@@ -317,7 +331,7 @@
   (setf *key-monitor-installed* nil)
 )
 
-(defun print-highway (*model* *accident*)
+(defun print-highway (*model* *accident* *usager*)
    (setf nbY (+ (slot-value *accident* 'positionY) 1))
    (format t "~C~C ~C~C^   ^   ^   ^~C~C"  #\return #\linefeed #\return #\linefeed #\return #\linefeed )
 
@@ -367,9 +381,25 @@
                      (= nbY (slot-value *model* 'positionY))))
          (format t "   |   |   | ~C~C" #\return #\linefeed )
       )
-
       (setf nbY (- nbY 1))
    )
+
+   ; l'usager est toujours derriere
+   (if (= (slot-value *usager* 'positionX) -1)
+      (format t "| U ")
+      (format t "|   ")
+   )
+   (format t "|")
+   (if (= (slot-value *usager* 'positionX) 0)
+      (format t " U ")
+      (format t "   ")
+   )
+   (format t "|")
+   (if (= (slot-value *usager* 'positionX) 1)
+      (format t " U  |")
+      (format t "    |")
+   )
+
    (format t "~C~C ~C~C"  #\return #\linefeed #\return #\linefeed )
 )
 
@@ -404,9 +434,9 @@
 
    ;; ------------------------------ Add Chunk-types here ------------------------------
 
-   (chunk-type check-state state result m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse action)
+   (chunk-type check-state state result m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse u_positionX action )
    ; TODO : nom de chunktype a changer car copier coller
-   (chunk-type learned-info result m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse)
+   (chunk-type learned-info result m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse u_positionX)
    (chunk-type car id weight)
    (chunk-type position id positionX positionY)
    (chunk-type speed id vitesse)
@@ -428,6 +458,7 @@
       (save_model_speed isa chunk)
       (save_acc_pos     isa chunk)
       (save_acc_speed   isa chunk)
+      (save_usager_pos  isa chunk)
       (re-start-suite   isa chunk)
 
       (remembering      isa chunk) 
@@ -473,6 +504,7 @@
          a_positionX    =x
          a_positionY    =y
          a_vitesse      =z
+         u_positionX    =u
       ==>
       =goal>
          isa            check-state
@@ -484,6 +516,7 @@
          a_positionX    =x
          a_positionY    =y
          a_vitesse      =z
+         u_positionX    =u
    )
    
    ;; --------------- Start et enregistrement des donnees dans des chunks  ---------------
@@ -575,6 +608,24 @@
          vitesse        =z
       -imaginal> 
       =goal>
+         state          save_usager_pos
+   )
+
+   (p set_usager_1
+      =goal>
+         isa            check-state
+         state          save_usager_pos
+         positionX      =u
+      ?imaginal>
+         state          free
+      ==>
+      +imaginal> 
+         isa            position
+         id             2
+         positionX      =u
+         positionY      nil
+      -imaginal> 
+      =goal>
          state          "end_set"
    )
 
@@ -647,6 +698,7 @@
          a_positionX    =x
          a_positionY    =y
          a_vitesse      =z
+         u_positionX    =u
       ?imaginal>
          state          free
       ==>
@@ -660,6 +712,7 @@
          a_positionX    =x
          a_positionY    =y
          a_vitesse      =z
+         u_positionX    =u
       =goal>
          state          remembering
    )
@@ -691,7 +744,6 @@
          state          applyAction
          action         =act
    )
-
 
 
 ;;---------------------------------------------
@@ -855,6 +907,7 @@
          a_positionX    =d
          a_positionY    =e
          a_vitesse      =f
+         u_positionX    =u
       ?imaginal>
          state          free    
       ==>
@@ -869,6 +922,7 @@
          a_positionX    =d
          a_positionY    =e
          a_vitesse      =f
+         u_positionX    =u
       -imaginal>
       =goal>
          state          finish
