@@ -45,7 +45,7 @@
 (defun place_elements (n-times &optional (draw-highway nil))   
    (let (scores (need-to-remove (add-key-monitor)))
 
-      (setf nbWin 0)
+      (setf nbTry 0)
       (dotimes (i n-times)
          (setf *voitures* (create-voitures)); Creation de notre voiture et de la voiture accident
          (setf m_oldSped (slot-value (car *voitures*) 'vitesse)) 
@@ -133,7 +133,7 @@
                ;;) 
 
                ;; on fait avancer la voiture selon sa vitesse
-               (setf (slot-value (car *voitures*) 'positionY) (+ (slot-value (car *voitures*) 'positionY) (slot-value (car *voitures*) 'vitesse)))
+               (setf (slot-value (car *voitures*) 'positionY) (+ (+ (slot-value (car *voitures*) 'positionY) (slot-value (car *voitures*) 'vitesse)) (slot-value (car *voitures*) 'poids)))
 
                ;; Les deux voitures sont sur la même case
                (if (and (= (slot-value (car *voitures*) 'positionX)  (slot-value (cadr *voitures*) 'positionX))  
@@ -183,13 +183,13 @@
                ;;)
 
                (if (string-equal res "esquive")
-                  (setf nbWin (+ nbWin 1))
+                  (setf nbTry (+ nbTry 1))
                )
             )
          )
       )
-      (format t "On a win ~d fois sur ~d essais" nbWin n-times)
-      (format t "~C~C ~C~C ~C~C" #\return #\linefeed #\return #\linefeed #\return #\linefeed)
+      (format t "On a win ~d fois sur ~d essais" nbTry n-times)
+      (format t "~C~C ~C~C ~C~C" #\return #\linefeed #\return #\linefeed #\return #\linefeed )
    )
    
    ;(when need-to-remove
@@ -204,54 +204,71 @@
    (defparameter *accident* (make-instance 'voiture))
    
 
-   (setf (slot-value *model* 'poids) 1) ; poids pas aléatoire pour l'instant 
+   (setf (slot-value *model* 'poids) (act-r-random 2)) 
    (setf (slot-value *model* 'vitesse) (+ (act-r-random 2) 3)) ; vitesse entre 3 et 4 
-   (setf (slot-value *model* 'positionX) 0) ; voie du milieu
-   (setf (slot-value *model* 'positionY) (act-r-random 1)) ; en bas de la route
+   (setf (slot-value *model* 'positionX) 0);;(- (act-r-random 3) 1)) ; voie du milieu
+   (setf (slot-value *model* 'positionY) (act-r-random 2)) ; en bas de la route
    
    (setf (slot-value *accident* 'poids) 1) ; poids pas aléatoire pour l'instant 
    (setf (slot-value *accident* 'vitesse) 0)
    (setf (slot-value *accident* 'positionX) 0) ; voie du milieu
    (setf (slot-value *accident* 'positionY) 2) ; en haut de la route
 
+   (setf nbY (+ (slot-value *accident* 'positionY) 1))
 
+   (format t "~C~C ~C~C^   ^   ^   ^~C~C"  #\return #\linefeed #\return #\linefeed #\return #\linefeed )
 
-   (format t "~C~C ~C~C|"  #\return #\linefeed #\return #\linefeed )
-   (if (= (slot-value *model* 'positionX) -1)
-      (format t " M ")
-      (format t "   ")
-   )
-   (format t "|")
-   (if (= (slot-value *model* 'positionX) 0)
-      (format t " M ")
-      (format t "   ")
-   )
-   (format t "|")
-   (if (= (slot-value *model* 'positionX) 1)
-      (format t " M ")
-      (format t "   ")
-   )
-   (format t "|    avec position Y = ~d et vitesse = ~d ~C~C ~C~C" (slot-value *model* 'positionY) (slot-value *model* 'vitesse) #\return #\linefeed #\return #\linefeed)
+   (while (not (= nbY -1))
+      (format t "|")
+      (if (= nbY (slot-value *model* 'positionY))
+         (progn
+            (if (= (slot-value *model* 'positionX) -1)
+               (format t " M ")
+               (format t "   ")
+            )
+            (format t "|")
+            (if (= (slot-value *model* 'positionX) 0)
+               (format t " M ")
+               (format t "   ")
+            )
+            (format t "|")
+            (if (= (slot-value *model* 'positionX) 1)
+               (format t " M ")
+               (format t "   ")
+            )
+            (format t "|    avec position Y = ~d et vitesse = ~d ~C~C" (slot-value *model* 'positionY) (slot-value *model* 'vitesse) #\return #\linefeed )
+         )
+      )
+      
+      (if (= nbY (slot-value *accident* 'positionY))
+         (progn
+            (if (= (slot-value *accident* 'positionX) -1)
+               (format t " A ")
+               (format t "   ")
+            )
+            (format t "|")
+            (if (= (slot-value *accident* 'positionX) 0)
+               (format t " A ")
+               (format t "   ")
+            )
+            (format t "|")
+            (if (= (slot-value *accident* 'positionX) 1)
+               (format t " A ")
+               (format t "   ")
+            )
+            (format t "|    avec position Y = ~d ~C~C" (slot-value *accident* 'positionY) #\return #\linefeed #\return #\linefeed )
+         )
+      )
 
-   (format t "|")
-   (if (= (slot-value *accident* 'positionX) -1)
-      (format t " A ")
-      (format t "   ")
-   )
-   (format t "|")
-   (if (= (slot-value *accident* 'positionX) 0)
-      (format t " A ")
-      (format t "   ")
-   )
-   (format t "|")
-   (if (= (slot-value *accident* 'positionX) 1)
-      (format t " A ")
-      (format t "   ")
-   )
-   (format t "|    avec position Y = ~d ~C~C ~C~C" (slot-value *accident* 'positionY) #\return #\linefeed #\return #\linefeed)
+      (if (not (or (= nbY (slot-value *accident* 'positionY))
+                     (= nbY (slot-value *model* 'positionY))))
+         (format t "   |   |   | ~C~C" #\return #\linefeed )
+      )
 
+      (setf nbY (- nbY 1))
+   )
 
-
+    (format t "~C~C ~C~C"  #\return #\linefeed #\return #\linefeed )
 
    (setf voitures-list (list *model* *accident*)) ; ajout des voitures dans une listere))
 
