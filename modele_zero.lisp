@@ -142,11 +142,15 @@
                ;; on fait avancer la voiture selon sa vitesse
                (setf (slot-value (car *voitures*) 'positionY) (+ (+ (slot-value (car *voitures*) 'positionY) (slot-value (car *voitures*) 'vitesse)) (slot-value (car *voitures*) 'poids)))
 
-               ;; L'accident et la modele sont sur la même case ou si le modele freine fort alors que l'usager se trouve juste derrière
-               (if (or  (and (= (slot-value (car *voitures*) 'positionX)  (slot-value (cadr *voitures*) 'positionX))
-                             (>= (slot-value (car *voitures*) 'positionY)  (slot-value (cadr *voitures*) 'positionY)))
-                        (and (= (slot-value (car *voitures*) 'positionX)  (slot-value (caddr *voitures*) 'positionX))
-                             (string-equal choix-model "2")))                  
+               ;; L'accident et le modele sont sur la même case ou si le modele freine alors que l'usager se trouve juste derrière
+               ;; ou si le modele enfonce le terre-plein central ou sort de la route
+               (if (or  (or   (and (= (slot-value (car *voitures*) 'positionX)  (slot-value (cadr *voitures*) 'positionX))
+                                   (>= (slot-value (car *voitures*) 'positionY)  (slot-value (cadr *voitures*) 'positionY)))
+                              (and (= (slot-value (car *voitures*) 'positionX)  (slot-value (caddr *voitures*) 'positionX))
+                                   (or  (string-equal choix-model "2")
+                                        (string-equal choix-model "1"))))
+                        (or   (or  (> (slot-value (car *voitures*) 'positionX)  1)
+                                   (< (slot-value (car *voitures*) 'positionX)  -1))))        
                   (progn
                      (setf res "crash")
                      (setf not-win t)
@@ -209,12 +213,12 @@
 
    (setf (slot-value *model* 'poids) (act-r-random 2)) 
    (setf (slot-value *model* 'vitesse) (+ (act-r-random 2) 3)) ; vitesse entre 3 et 4 
-   (setf (slot-value *model* 'positionX) 0);;(- (act-r-random 3) 1)) ; voie du milieu
+   (setf (slot-value *model* 'positionX) (- (act-r-random 3) 1)) ; voie entre -1 et 1
    (setf (slot-value *model* 'positionY) (act-r-random 2)) ; en bas de la route
    
    (setf (slot-value *accident* 'poids) 0)      ; pas d'importance
    (setf (slot-value *accident* 'vitesse) 0)    ; pas d'importance
-   (setf (slot-value *accident* 'positionX) 0)  ; voie du milieu
+   (setf (slot-value *accident* 'positionX) (- (act-r-random 3) 1))  ; voie entre -1 et 1
    (setf (slot-value *accident* 'positionY) 2)  ; en haut de la route
    
    ; le but de cette voiture derriere est d'empecher notre modele de freiner fort, sinon crash
@@ -396,8 +400,8 @@
    )
    (format t "|")
    (if (= (slot-value *usager* 'positionX) 1)
-      (format t " U  |")
-      (format t "    |")
+      (format t " U |")
+      (format t "   |")
    )
 
    (format t "~C~C ~C~C"  #\return #\linefeed #\return #\linefeed )
@@ -435,17 +439,10 @@
    ;; ------------------------------ Add Chunk-types here ------------------------------
 
    (chunk-type check-state state result m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse u_positionX action )
-   ; TODO : nom de chunktype a changer car copier coller
    (chunk-type learned-info result m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse u_positionX)
    (chunk-type car id weight)
    (chunk-type position id positionX positionY)
    (chunk-type speed id vitesse)
-
-   ;; a enlever (chunk-type turn xRelativePosition)
-   ;; a enlever (chunk-type brake power)
-
-
-
 
    ;(declare-buffer-usage goal check-state :all )
 
@@ -628,52 +625,6 @@
       =goal>
          state          "end_set"
    )
-
-   ;; ------------------ Modification des donnees  ------------------
-   ;; S'il existe deja un chunck avec id = 0, on le modifie
-   ;; Au lieu d'en recreer un nouveau avec le meme id
-   ;; ---------------------------------------------------------------
-
-   (p re_start
-      =goal>
-         state          "re-start"
-         positionX      =posX
-         positionY      =posY
-         vitesse        =v
-         ;; on veut chopper
-         isa            position
-         id             0
-
-      ?retrieval>
-         state          free
-      ==>
-      +retrieval> 
-         ;; pour modifier
-         isa            position
-         positionX      =posX
-         positionY      =posY
-      =goal>
-         state          re-start-suite
-         vitesse        =v
-   )
-
-   (p re_start
-         =goal>
-            state          re-start-suite
-            vitesse        =v
-            ;; on veut chopper
-            isa            speed
-            id             0
-         ?retrieval>
-            state          free
-         ==>
-         +retrieval> 
-            ;; pour modifier
-            isa            speed
-            vitesse        =v
-         =goal>
-            state          "end_set"
-      )
 
    ;; ----------------- Enregistrement des donnees  -----------------
    ;; On essaie de se souvenir si la situation s'est déjà présenté
@@ -948,13 +899,4 @@
       ==>
       -goal>
    )
-
-   ;;(p clear-new-imaginal-chunk
-   ;;   ?imaginal>
-   ;;      state free
-   ;;      buffer full
-   ;;   ==>
-   ;;   -imaginal>
-   ;;)
 )
-
