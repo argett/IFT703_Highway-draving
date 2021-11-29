@@ -45,14 +45,15 @@
 (defun place_elements (n-times &optional (draw-highway nil))   
    (let (scores (need-to-remove (add-key-monitor)))
 
-      (setf nbTry 0)
+      (setf simulation 0)
       (dotimes (i n-times)
+         (setf simulation (+ simulation 1))
          (setf *voitures* (create-voitures)); Creation de notre voiture et de la voiture accident
          (setf m_oldSped (slot-value (car *voitures*) 'vitesse)) 
          (setf m_oldPosX (slot-value (car *voitures*) 'positionX)) 
          (setf m_oldPosY (slot-value (car *voitures*) 'positionY)) 
 
-         (setf tour 1)
+         (setf nbTry 0)
          (setf not-win t) ; t = true, nil = false
          (setf res nil)
          (setf state nil)
@@ -60,9 +61,7 @@
          ;; TODO : creation d'autres usagers = (setf *usagers* (create-usagers)); Creation des voitures des autres usagers si complexification
 
          (while not-win ; appeler le modèle tant qu'il n'a pas win ou pas crash         
-            (format t "    On est dans la boucle ~d fois ~C~C" tour #\return #\linefeed )
-
-            (if (> tour 1) 
+            (if (> nbTry 1) 
                (progn
                   (setf res nil)
                )
@@ -75,7 +74,7 @@
             (setf (slot-value (car *voitures*) 'positionY) m_oldPosY) 
 
             (let ((choix-model (show-model-highway *voitures* res state))); Montre notre voiture et l'accident au modèle et enregistre la key pressée par le model
-               (setf tour (+ tour 1))
+               (setf nbTry (+ nbTry 1))
 
                ;; 1 = frein faible, 2 = frein fort, 3 = tourne a droite, 4 = tourne a gauche
                (if (string-equal "1" choix-model) 
@@ -181,14 +180,11 @@
                ;;   (print-accident (cadr *voitures*))
                ;;   (print-route)
                ;;)
-
-               (if (string-equal res "esquive")
-                  (setf nbTry (+ nbTry 1))
-               )
             )
          )
+         (format t "INFO : ~d /4 tentatives ~C~C" nbTry #\return #\linefeed )
+         (format t "INFO : On est ~d / ~d essais ~C~C" simulation n-times #\return #\linefeed )
       )
-      (format t "On a win ~d fois sur ~d essais" nbTry n-times)
       (format t "~C~C ~C~C ~C~C" #\return #\linefeed #\return #\linefeed #\return #\linefeed )
    )
    
@@ -236,7 +232,7 @@
                (format t " M ")
                (format t "   ")
             )
-            (format t "|    avec position Y = ~d et vitesse = ~d ~C~C" (slot-value *model* 'positionY) (slot-value *model* 'vitesse) #\return #\linefeed )
+            (format t "|    avec position Y = ~d ; vitesse = ~d ; poids = ~d ~C~C" (slot-value *model* 'positionY) (slot-value *model* 'vitesse) (+ (slot-value *model* 'poids) 1) #\return #\linefeed )
          )
       )
       
@@ -256,7 +252,7 @@
                (format t " A ")
                (format t "   ")
             )
-            (format t "|    avec position Y = ~d ~C~C" (slot-value *accident* 'positionY) #\return #\linefeed #\return #\linefeed )
+            (format t "|    avec position Y = ~d ~C~C" (slot-value *accident* 'positionY) #\return #\linefeed )
          )
       )
 
