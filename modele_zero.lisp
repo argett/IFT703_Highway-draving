@@ -117,7 +117,8 @@
                      ;(format t "Le modele a esquive ~C~C" #\return #\linefeed )
                   )
                )
-      
+
+               ;; on renvoie le résultat au modele ACTR
                (show-model-result res)
 
                (if (string-equal res "esquive")
@@ -217,7 +218,7 @@
       (mod-focus-fct `(m_positionX ,(slot-value (car voitures) 'positionX) 
                         m_positionY ,(slot-value (car voitures) 'positionY) 
                         m_vitesse   ,(slot-value (car voitures) 'vitesse) 
-                        result      ,nil ;; pourquoi mettre res ici ?
+                        result      ,nil 
                         state       ,"end_set" ;; on tente de se remember directement
                      ) 
       )
@@ -876,3 +877,21 @@
 ;;   (defvar voitures-autour-list (list *usager1* *usager2*  *usager3*))
 ;;   voitures-autour-list
 ;;)
+
+
+;; (p set_usager_1
+;;    =goal>
+;;       isa            check-state
+;;       state          save_usager_speed
+;;       m_vitesse      =z
+;;    ?imaginal>
+;;       state          free
+;;    ==>
+;;    +imaginal> 
+;;       isa            speed
+;;       id             2
+;;       vitesse        =z
+;;    -imaginal> 
+;;    =goal>
+;;       state          "end_set"
+;; )
