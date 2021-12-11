@@ -8,3 +8,7 @@ Paramètre pour le modèle ACTR :
 
 (sgp :v nil :esc t :lf 0.4 :bll 0.4 :ans 0.6 :rt 0 :ncnar nil)
 (sgp :v nil :esc t :lf 0.5 :bll 0.2 :ans 0.9 :rt 0 :ncnar nil)
+
+Le fichier graph.py est utlisé pour faire les fonctions des moyennes.
+Comme nous 'navons pas pu intégrer l'affichage des courbes en Lisp nous avons utilisé ce programme.
+Il vous faut rentrer les valeurs

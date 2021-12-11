@@ -1,3 +1,13 @@
+;==================================================;
+;                                                  ;
+;        Andreas Duquenne                          ;
+;        Lilian Favre Garcia                       ;
+;        Andrianihary Tsiory Razafindramisa        ;
+;                                                  ;
+;                      PROJET                      ;
+;                                                  ;
+;==================================================;
+
 (clear-all)
 
 (defvar *model-action* nil) ; La variable que le model devra remplir (liste de valise)
