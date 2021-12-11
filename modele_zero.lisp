@@ -13,8 +13,8 @@
    )
 )
 
-;; pas reussis a implémenter ça
-(defun show-learning (n &optional (graph t)) 
+;; pas implémenté
+(defun show-learning (n) 
    (let (points)
       (dotimes (i n);; ici pour des blocs de 100
          (push (run-blocks 1 100) points)
@@ -23,6 +23,7 @@
 )
 
 
+;; pas implémenté
 (defun run-blocks (blocks block-size)     
    (dotimes (i blocks)
       (setf retour (place_elements block-size))
@@ -292,13 +293,13 @@
 
 (define-model conductor
     
-   (sgp :v t :esc t :lf 0.4 :bll 0.4 :ans 0.6 :rt 0 :ncnar nil)
+   (sgp :v nil :esc t :lf 0.4 :bll 0.4 :ans 0.6 :rt 0 :ncnar nil)
    (install-device (open-exp-window "" :visible nil))
 
    ;; ------------------------------ Add Chunk-types here ------------------------------
 
    (chunk-type check-state state result m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse action)
-   (chunk-type learned-info result m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse)
+   (chunk-type learned-info result action m_weight m_positionX m_positionY m_vitesse a_positionX a_positionY a_vitesse)
 
    (chunk-type car id weight)
    (chunk-type position id positionX positionY)
@@ -311,6 +312,7 @@
 
    (define-chunks 
       ;; les differents states du goal
+      (start            isa chunk)
       (save_model_weight isa chunk) 
       (save_model_pos   isa chunk)
       (save_model_speed isa chunk)
@@ -318,6 +320,7 @@
       (save_acc_speed   isa chunk)
 
       (remembering      isa chunk) 
+      (loose            isa chunk)
       (choice           isa chunk) 
       (choseAction      isa chunk)
       (applyAction      isa chunk) 
@@ -512,12 +515,10 @@
          isa            check-state
          state          remembering
       =retrieval>
-         isa            learned-info
          result         =res
          action         =act
       ==>
       =goal>
-         isa            learned-info
          state          choseAction
          result         =res
          action         =act
@@ -525,7 +526,6 @@
 
    (p remember-win
       =goal>
-         isa            learned-info
          state          choseAction
          result        "esquive"
          action         =act
@@ -535,7 +535,45 @@
          action         =act
    )
 
+   (p doesnt-remember-win
+      =goal>  
+         state          loose
+      =retrieval>
+         isa            car
+         id             =i
+         weight         =p
+      ==>
+      =goal>
+         state          choseAction
+         m_weight       =p
+         m_vitesse      =i
+   )
 
+   (p doesnt-remember-win2
+      =goal>  
+         state          loose
+      =retrieval>
+         isa            position
+         positionX      =px
+         positionY      =py
+      ==>
+      =goal>
+         state          choseAction
+         m_positionX    =px
+         m_positionY    =py
+   )
+
+   (p doesnt-remember-win3
+      =goal>  
+         state          loose
+      =retrieval>
+         isa            speed
+         vitesse          =p
+      ==>
+      =goal>
+         state          choseAction
+         m_vitesse      =p
+   )
 
 ;;---------------------------------------------
 
