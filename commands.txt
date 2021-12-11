@@ -1,0 +1,21 @@
+Single trial :
+	(place_elements 'nombre de test')
+
+ex : 	(place_elements 50)
+
+
+Multi trial :
+	(run-blocks nombre de blocks' 'nombre de test' optionel: print')
+
+ex : 	(run-blocks 25 50)
+ex :	(run-blocks 25 500 t)
+
+
+
+/!\ Apprentissage : /!\
+
+Nous n'avons pas su appeler une fenêtre via Lisp pour afficher les résultats directement via notre modèle.
+A la place, les simulations renvoient une liste de nombres.
+Pour présenter les graphs, nous les avons simplement plot avec un programme Python grâce à Matpllot lib.
+Si vous avez un compilateur Python tel que Spyder par exemple, vous pouvez copier/coller les valeurs dans les "" prévus à cet effet.
+Sinon, nous avons réalisé des captures d'écrans dans notre présentation PPT ainsi que notre rapport.

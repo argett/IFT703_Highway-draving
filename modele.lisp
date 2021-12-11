@@ -313,7 +313,7 @@
 
 (define-model conductor
     
-   (sgp :v nil :esc t :lf 0.4 :bll 0.4 :ans 0.6 :rt 0 :ncnar nil)
+   (sgp :v nil :esc t :lf 0.5 :bll 0.2 :ans 0.9 :rt 0 :ncnar nil)
    (install-device (open-exp-window "" :visible nil))
 
    ;; ------------------------------ Chunk-types ------------------------------
