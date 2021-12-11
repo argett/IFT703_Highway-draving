@@ -148,10 +148,18 @@
    (setf (slot-value *model* 'positionY) 1) ; en bas de la route
    
    (setf (slot-value *accident* 'poids) 1) ; poids pas aléatoire pour l'instant 
-   (setf (slot-value *accident* 'vitesse) 0)
-   (setf (slot-value *accident* 'positionX) 0) ; voie du milieu
-   (setf (slot-value *accident* 'positionY) 2) ; en haut de la route
+   (setf (slot-value *accident* 'vitesse) 0) 
 
+   (setf behind (act-r-random 8)) 
+   (if (= behind 7) 
+      (setf (slot-value *accident* 'positionX) -1) 
+      (if (= behind 6) 
+         (setf (slot-value *accident* 'positionX) 1) 
+         (setf (slot-value *accident* 'positionX) 0) 
+      ) 
+   ) 
+   
+   (setf (slot-value *accident* 'positionY) 2) ; en haut de la route 
    (setf nbY (+ (slot-value *accident* 'positionY) 1))
 
    (format t "~C~C ~C~C^   ^   ^   ^~C~C"  #\return #\linefeed #\return #\linefeed #\return #\linefeed )
